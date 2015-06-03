@@ -1,0 +1,4 @@
+obj/
+*.opensdf
+*.sdf
+*.exp
