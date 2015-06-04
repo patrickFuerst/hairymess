@@ -67,8 +67,9 @@ vec4 positionIntegration( vec4 position, vec4 velocity, vec4 force, bool fix){
 
 	}else{
 
-		position = g_modelMatrixDelta * position ;
-		position /= position.w;
+		// first project it back to worldspace so rotations get handled properly
+		position.xyz = (g_modelMatrixPrevInverted * vec4(position.xyz,1.0)).xyz ;
+		position.xyz = (g_modelMatrix * vec4(position.xyz,1.0)).xyz ;
 
 	}
 	return position; 
@@ -83,8 +84,9 @@ vec4 verletIntegration(  vec4 position , vec4 previousPosition, vec4 force,  boo
 		position.xyz +=   (position.xyz - previousPosition.xyz) * g_velocityDamping	  + force.xyz * g_timeStep * g_timeStep;
 
 	}else{
-
-		position.xyz = (g_modelMatrixDelta * vec4(position.xyz,1.0)).xyz ;
+		// first project it back to worldspace so rotations get handled properly
+		position.xyz = (g_modelMatrixPrevInverted * vec4(position.xyz,1.0)).xyz ;
+		position.xyz = (g_modelMatrix * vec4(position.xyz,1.0)).xyz ;
 
 	}
 	return position; 

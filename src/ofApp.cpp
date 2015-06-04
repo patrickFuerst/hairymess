@@ -2,13 +2,11 @@
 #include "ofConstants.h"
 
 
-#define NUM_HAIRS 300
 #define NUM_HAIR_PARTICLES 16   // number must not be bigger then WORK_GROUP_SIZE , current 32 max, because glsl for loop limited
-#define HAIR_LENGTH 0.5f
+#define HAIR_LENGTH 2.0f
 
 
 #define WORK_GROUP_SIZE 64
-#define NUMGROUPS ((NUM_HAIRS*NUM_HAIR_PARTICLES + (WORK_GROUP_SIZE-1))/ WORK_GROUP_SIZE)
 
 void ofApp::reloadShaders(){
 
@@ -25,7 +23,7 @@ void ofApp::reloadShaders(){
 
 	mComputeShader.setUniform3f("g_gravityForce", ofVec3f(0,-10,0));
 	mComputeShader.setUniform1i("g_numVerticesPerStrand",NUM_HAIR_PARTICLES);
-	mComputeShader.setUniform1i("g_numStrandsPerThreadGroup", NUM_HAIRS * NUM_HAIRS / WORK_GROUP_SIZE);
+	mComputeShader.setUniform1i("g_numStrandsPerThreadGroup", mNumHairs * mNumHairs / WORK_GROUP_SIZE);
 	mComputeShader.setUniform1f("g_strandLength",HAIR_LENGTH);
 
 	mHairshader.setupShaderFromFile( GL_VERTEX_SHADER, "basic_VS.glsl");
@@ -34,7 +32,7 @@ void ofApp::reloadShaders(){
 	
 	particlesBuffer.setData(particles,GL_DYNAMIC_DRAW);
 
-
+	mModelAnimation.makeIdentityMatrix();
 }
 
 //--------------------------------------------------------------
@@ -43,25 +41,27 @@ void ofApp::setup(){
 	mReloadShaders = true; 
 	ofSetLogLevel( OF_LOG_VERBOSE);
 	//ofSetVerticalSync(false);
-	//camera.setAutoDistance(false);
+	camera.setAutoDistance(false);
 	camera.setupPerspective(false,60,0.1,1000);
-	camera.setPosition(0,0,1);
+	camera.setPosition(10,15,10);
 	camera.lookAt(ofVec3f(0,0,0));
-	particles.resize(NUM_HAIRS* NUM_HAIR_PARTICLES);
+	
+	mFurryMesh = ofMesh::sphere(4,12 ); 
+	mNumHairs = mFurryMesh.getNumVertices();
+	particles.resize( mNumHairs * NUM_HAIR_PARTICLES);
 
-	int index = 0;
-	ofVec3f startPos(-0.5,0.0,0);
-	float deltaX = 1.0f/NUM_HAIRS;
-	float deltaY = HAIR_LENGTH/NUM_HAIR_PARTICLES;
-	for (int i = 0; i < NUM_HAIRS; i++)
+	mNumWorkGroups = ((mNumHairs*NUM_HAIR_PARTICLES + (WORK_GROUP_SIZE-1))/ WORK_GROUP_SIZE);
+	
+		int index = 0;
+	for (int i = 0; i <  mFurryMesh.getNumVertices(); i++)
 	{
+
+		ofVec3f v = mFurryMesh.getVertex(i);
+		ofVec3f n = mFurryMesh.getNormal(i);
 		for (int j = 0; j < NUM_HAIR_PARTICLES; j++)
 		{
 			auto& p = particles.at(index);
-			
-			p.pos.x = startPos.x + i* deltaX;
-			p.pos.y = startPos.y - j * deltaY;
-			p.pos.z = startPos.z;
+			p.pos = v + j* n * HAIR_LENGTH / NUM_HAIR_PARTICLES;
 			p.pos.w = 1.0; 
 			p.prevPos = p.pos;
 			p.vel.set(0,0,0,0);
@@ -71,6 +71,7 @@ void ofApp::setup(){
 
 	}
 	
+	mModelAnimation.makeIdentityMatrix();
 	particlesBuffer.allocate(particles,GL_DYNAMIC_DRAW);
 
 	vbo.setVertexBuffer(particlesBuffer,4,sizeof(Particle));
@@ -116,19 +117,31 @@ void ofApp::update(){
 	if( timeStep > 0.02)  // prevent to high timesteps at the beginning of the app start
 		timeStep = 0.02;
 
-	ofMatrix4x4 strandModelMatrixDelta = mStrandModelMatrix * mStrandModelMatrixPrevInversed;
-	mStrandModelMatrixPrevInversed = mStrandModelMatrix.getInverse();
-	
+	//ofMatrix4x4 modelAnimationMatrixDelta = mModelAnimation * mModelAnimationPrevInversed;
+	mModelAnimationPrevInversed = mModelAnimation.getInverse();
+
+	static ofQuaternion first, second; 
+	first.makeRotate(0,0,0,0);
+	second.makeRotate(180,1,1,0);
+	mModelOrientation.slerp( sin(0.2f* ofGetElapsedTimef()), first, second);
+	mModelAnimation.makeIdentityMatrix();
+	mModelAnimation.postMultRotate(mModelOrientation);
+	mModelAnimation.setTranslation( ofVec3f( 0,5.0f*abs( sin( ofGetElapsedTimef() ) ), 0));
+
 	mComputeShader.begin();
 
 	glUniformSubroutinesuiv( GL_COMPUTE_SHADER, 1, subroutineUniforms);
 	
 	mComputeShader.setUniforms(mShaderUniforms);
 	mComputeShader.setUniform1f("g_timeStep",timeStep);
-	mComputeShader.setUniformMatrix4f("g_modelMatrixDelta",strandModelMatrixDelta );	
+	mComputeShader.setUniformMatrix4f("g_modelMatrix",mModelAnimation );	
+	mComputeShader.setUniformMatrix4f("g_modelMatrixPrevInverted",mModelAnimationPrevInversed );	
 	mComputeShader.setUniform1f("elapsedTime",ofGetElapsedTimef());
-	mComputeShader.dispatchCompute( NUMGROUPS, 1, 1);
+	
+	mComputeShader.dispatchCompute( mNumWorkGroups, 1, 1);
 	mComputeShader.end();
+
+
 	
 }
 
@@ -136,10 +149,17 @@ void ofApp::update(){
 void ofApp::draw(){
 	ofEnableBlendMode(OF_BLENDMODE_ADD);
 	camera.begin();
-	ofSetColor(ofColor::red);
 	
-	ofSetColor(255);
+	ofDrawGrid(1.25, 10 , false,false,true,false);
+
+	ofSetColor(ofColor::red);
+	ofPushMatrix();
+	ofMultViewMatrix(mModelAnimation);
+	mFurryMesh.draw();
+	ofPopMatrix();
+	
 	glPointSize(2);
+	
 	mHairshader.begin();
 
 	glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT); //? 
@@ -184,9 +204,9 @@ void ofApp::keyReleased(int key){
 //--------------------------------------------------------------
 void ofApp::mouseMoved(int x, int y ){
 
-	ofVec3f t =  camera.screenToWorld( ofVec3f(x,y,0.8));
-	t.z = 0.0;
-	mStrandModelMatrix.setTranslation( t ) ; 
+	//ofVec3f t =  camera.screenToWorld( ofVec3f(x,y,0.8));
+	//t.z = 0.0;
+	//mStrandModelMatrix.setTranslation( t ) ; 
 
 }
 

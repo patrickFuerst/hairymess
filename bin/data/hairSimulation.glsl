@@ -17,7 +17,8 @@ layout(std140, binding=0) buffer particle{
 
 
 // model properties
-uniform mat4 g_modelMatrixDelta; // need this to transform the fixed vertices if model moves
+uniform mat4 g_modelMatrix; // need this to transform the fixed vertices if model moves
+uniform mat4 g_modelMatrixPrevInverted;
 uniform vec3 g_gravityForce;
 
 // strand properties

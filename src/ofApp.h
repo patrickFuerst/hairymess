@@ -37,17 +37,19 @@ class ofApp : public ofBaseApp{
 		};
 
 		ofShader mComputeShader;
+		int mNumWorkGroups;
 		//ofShader mConstrainPerStrainComputeShader;
 
 		ofShader mHairshader; 
 		vector<Particle> particles;
 		ofBufferObject particlesBuffer;//, particlesBuffer2;
 		
-		ofMatrix4x4 mStrandModelMatrix, mStrandModelMatrixPrevInversed;
-		
+		ofMatrix4x4 mModelAnimation, mModelAnimationPrevInversed;
+		ofQuaternion mModelOrientation; 
+
 		GLuint vaoID;
-		//ofEasyCam camera;
-		ofCamera camera;
+		ofEasyCam camera;
+		//ofCamera camera;
 		ofVbo vbo;
 		
 		ofxPanel gui;
@@ -63,7 +65,8 @@ class ofApp : public ofBaseApp{
 		ofParameter<float> mFTLDistanceDamping;
 		ofParameter<float> fps;
 
-		
+		ofMesh mFurryMesh;
+		int mNumHairs; 
 		GLuint subroutineUniforms[1];
 
 
