@@ -7,6 +7,12 @@
 class ofApp : public ofBaseApp{
 
 	public:
+
+		struct AABB {
+			ofVec3f min; 
+			ofVec3f max; 
+		};
+
 		void setup();
 		void update();
 		void draw();
@@ -24,8 +30,12 @@ class ofApp : public ofBaseApp{
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
 		
-		void algorithmChanged(const void* sender);
 
+		void fillVoxelGrid();
+		AABB calculateBoundingBox( ofMesh &mesh, float hairlength  );
+
+
+		void algorithmChanged(const void* sender);
 
 		struct Particle{
 			ofVec4f pos;
@@ -36,14 +46,32 @@ class ofApp : public ofBaseApp{
 			int pad[3];  // struct in glsl is aligned to multiple of the biggest base alingment, here 16 , so offset of next is 64 not 52
 		};
 
+		struct Voxel{
+			ofVec4f velocity;
+			//float density; 
+			//int pad[3];
+		}; 
+
+
+		ofShader mVoxelComputeShader; 
+		int mVoxelGridSize; 
+
+		ofShader mVoxelGridShader;
+		ofVbo mVoxelVBO; 
+
+
 		ofShader mComputeShader;
 		int mNumWorkGroups;
 		//ofShader mConstrainPerStrainComputeShader;
 
 		ofShader mHairshader; 
 		vector<Particle> particles;
-		ofBufferObject particlesBuffer;//, particlesBuffer2;
-		
+		ofBufferObject particlesBuffer, mVoxelBuffer;
+
+		ofMesh mFurryMesh;
+		int mNumHairs; 
+		AABB mSimulationBoundingBox; 
+
 		ofMatrix4x4 mModelAnimation, mModelAnimationPrevInversed;
 		ofQuaternion mModelOrientation; 
 
@@ -51,6 +79,7 @@ class ofApp : public ofBaseApp{
 		ofEasyCam camera;
 		//ofCamera camera;
 		ofVbo vbo;
+
 		
 		ofxPanel gui;
 		ofParameter<float> mVelocityDamping,  mStiffness ; 
@@ -65,11 +94,12 @@ class ofApp : public ofBaseApp{
 		ofParameter<float> mFTLDistanceDamping;
 		ofParameter<float> fps;
 
-		ofMesh mFurryMesh;
-		int mNumHairs; 
 		GLuint subroutineUniforms[1];
 
-
-
+		// debug 
 		bool mReloadShaders; 
+		ofParameter<bool> mDrawBoundingBox; 
+		ofParameter<bool> mDrawVoxelGrid; 
+		ofParameter<bool> mDrawFur; 
+
 };

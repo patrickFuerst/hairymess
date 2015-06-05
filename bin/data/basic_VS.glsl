@@ -4,6 +4,11 @@
 #define COLOR		1
 #define NORMAL		2
 #define TEXCOORD    3
+
+#define VELOCITY 4
+#define DENSITY 5 
+
+
 #define FRAG_COLOR	0
 
 
@@ -35,6 +40,6 @@ void main()
 {	
 	//gl_Position = modelViewProjectionMatrix * position ;
 	gl_Position =  modelViewProjectionMatrix * position;
-	Out.color  = vec4(1,1,1,1);
+	Out.color  = color;
 }
 
