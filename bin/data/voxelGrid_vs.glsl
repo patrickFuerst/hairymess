@@ -55,7 +55,8 @@ void main()
 	//gl_Position = modelViewProjectionMatrix * position ;
 	//gl_Position =  modelViewProjectionMatrix * position;
 	gl_Position = modelViewProjectionMatrix * g_modelMatrix * vec4(gl_Position.xyz,1.0);
-	//float alpha = density > 0.0 ? 1.0 : 0.0;
-	Out.color  = vec4(vec3(density), 1.0);
+	float alpha = density > 0.0 ? 1.0 : 0.0;
+	//Out.color  = vec4(vec3(density), alpha);
+	Out.color  = vec4(velocity.xyz/density,alpha);
 }
 

@@ -54,9 +54,12 @@ void ofApp::reloadShaders(){
 		glGetIntegerv(GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS, &maxInv ); 
 		glGetIntegerv(GL_MAX_COMPUTE_WORK_GROUP_COUNT, &maxInv ); 
 	
-	mVoxelComputeShader.setUniform1i("g_numVerticesPerStrand",NUM_HAIR_PARTICLES);
-	mVoxelComputeShader.setUniform1i("g_numStrandsPerThreadGroup", mNumHairs * mNumHairs / WORK_GROUP_SIZE);	
+	/*mVoxelComputeShader.setUniform1i("g_numVerticesPerStrand",NUM_HAIR_PARTICLES);
+	mVoxelComputeShader.setUniform1i("g_numStrandsPerThreadGroup", mNumHairs * mNumHairs / WORK_GROUP_SIZE);	*/
 		
+
+
+
 	mVoxelGridShader.load( "voxelGrid_vs.glsl", "voxelGrid_fs.glsl" ); 
 
 
