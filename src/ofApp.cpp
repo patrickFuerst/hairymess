@@ -116,7 +116,7 @@ void ofApp::setup(){
 
 
 	// VOXEL BUFFER
-	mVoxelGridSize = 16;
+	mVoxelGridSize = 64;
 	mVoxelBuffer.allocate( sizeof(Voxel) * mVoxelGridSize * mVoxelGridSize * mVoxelGridSize, GL_STREAM_COPY);
 	mVoxelBuffer.bindBase(GL_SHADER_STORAGE_BUFFER,1);
 	mVoxelVBO.setAttributeBuffer( VELOCITY , mVoxelBuffer, 4 , sizeof(Voxel), offsetof(Voxel, Voxel::velocity)  ); // first attribute is velocity 
@@ -178,13 +178,13 @@ void ofApp::update(){
 	//ofMatrix4x4 modelAnimationMatrixDelta = mModelAnimation * mModelAnimationPrevInversed;
 	mModelAnimationPrevInversed = mModelAnimation.getInverse();
 
-	//static ofQuaternion first, second; 
-	//first.makeRotate(0,0,0,0);
-	//second.makeRotate(180,1,1,0);
-	//mModelOrientation.slerp( sin(0.2f* ofGetElapsedTimef()), first, second);
-	//mModelAnimation.makeIdentityMatrix();
-	//mModelAnimation.postMultRotate(mModelOrientation);
-	//mModelAnimation.setTranslation( ofVec3f( 0,5.0f*abs( sin( ofGetElapsedTimef() ) ), 0));
+	static ofQuaternion first, second; 
+	first.makeRotate(0,0,0,0);
+	second.makeRotate(180,1,1,0);
+	mModelOrientation.slerp( sin(0.2f* ofGetElapsedTimef()), first, second);
+	mModelAnimation.makeIdentityMatrix();
+	mModelAnimation.postMultRotate(mModelOrientation);
+	mModelAnimation.setTranslation( ofVec3f( 0,5.0f*abs( sin( ofGetElapsedTimef() ) ), 0));
 
 	mComputeShader.begin();
 

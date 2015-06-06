@@ -56,11 +56,11 @@ void calculateIndices( inout uint localVertexIndex , inout uint localStrandIndex
 
 int  calculateVoxelIndex( const vec4 position, const uint gridSize  ) {
 
-	// position in Voxelgrid space 
 
-	//vec3 minBB =  g_minBB ;
-	//vec3 maxBB =  g_maxBB ;
-	vec4 scaledPosition = position / 12.0 + 0.5;
+	vec3 minBB =  g_minBB ;
+	vec3 maxBB =  g_maxBB ;
+	// position in Voxelgrid space 
+	vec4 scaledPosition = (position - vec4( g_modelTranslation, 0.0) ) / vec4((g_maxBB - g_minBB),1) + 0.5;
 
 	return int(floor(scaledPosition.x  * gridSize) + floor(scaledPosition.y * gridSize) * gridSize* gridSize  + floor(scaledPosition.z * gridSize) *  gridSize);
 
