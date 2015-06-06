@@ -134,6 +134,7 @@ void ofApp::setup(){
 	mShaderUniforms.add( mVelocityDamping.set("g_velocityDamping", 0.5f, 0,1));
 	mShaderUniforms.add( mNumConstraintIterations.set("g_numIterations", 25, 0,200));
 	mShaderUniforms.add( mStiffness.set("g_stiffness",1.0f, 0,1));
+	mShaderUniforms.add( mFriction.set("g_friction",0.1f, 0,0.01));
 	mShaderUniforms.add( mFTLDistanceDamping.set("g_ftlDamping", 1.0,0.0,1.0));
 	mSimulationAlgorithms.setName( "shader algorithms");
 	
@@ -199,6 +200,12 @@ void ofApp::update(){
 	mComputeShader.setUniformMatrix4f("g_modelMatrixPrevInverted",mModelAnimationPrevInversed );	
 	mComputeShader.setUniform1f("elapsedTime",ofGetElapsedTimef());
 	
+		
+	mComputeShader.setUniform3f("g_modelTranslation", mModelAnimation.getTranslation() );
+	mComputeShader.setUniform3f( "g_minBB" , mSimulationBoundingBox.min);
+	mComputeShader.setUniform3f( "g_maxBB" , mSimulationBoundingBox.max);
+	mComputeShader.setUniform1i( "g_gridSize", mVoxelGridSize);
+
 	mComputeShader.dispatchCompute( mNumWorkGroups, 1, 1);
 	mComputeShader.end();
 

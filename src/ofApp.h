@@ -82,7 +82,7 @@ class ofApp : public ofBaseApp{
 
 		
 		ofxPanel gui;
-		ofParameter<float> mVelocityDamping,  mStiffness ; 
+		ofParameter<float> mVelocityDamping,  mStiffness, mFriction ; 
 		ofParameterGroup mShaderUniforms;
 		ofxGuiGroup mSimulationAlgorithms; 
 		ofxButton mPBDAlgorithm, mDFTLAlgorithm; 
