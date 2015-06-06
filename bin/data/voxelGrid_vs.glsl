@@ -16,7 +16,7 @@ precision highp int;
 //layout(std430, column_major) buffer; AMD bug
 
 layout(location = VELOCITY) in vec4 velocity;
-//layout(location = DENSITY) in float density ;
+layout(location = DENSITY) in float density ;
 
 //layout(std140, column_major) uniform;
 //layout(std430, column_major) buffer; AMD bug
@@ -56,6 +56,6 @@ void main()
 	//gl_Position =  modelViewProjectionMatrix * position;
 	gl_Position = modelViewProjectionMatrix * g_modelMatrix * vec4(gl_Position.xyz,1.0);
 	//float alpha = density > 0.0 ? 1.0 : 0.0;
-	Out.color  = vec4(velocity.xyz, 1.0);
+	Out.color  = vec4(vec3(density), 1.0);
 }
 

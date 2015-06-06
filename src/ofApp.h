@@ -48,8 +48,8 @@ class ofApp : public ofBaseApp{
 
 		struct Voxel{
 			ofVec4f velocity;
-			//float density; 
-			//int pad[3];
+			float density; 
+			int pad[3];
 		}; 
 
 

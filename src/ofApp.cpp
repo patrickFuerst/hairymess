@@ -120,7 +120,7 @@ void ofApp::setup(){
 	mVoxelBuffer.allocate( sizeof(Voxel) * mVoxelGridSize * mVoxelGridSize * mVoxelGridSize, GL_STREAM_COPY);
 	mVoxelBuffer.bindBase(GL_SHADER_STORAGE_BUFFER,1);
 	mVoxelVBO.setAttributeBuffer( VELOCITY , mVoxelBuffer, 4 , sizeof(Voxel), offsetof(Voxel, Voxel::velocity)  ); // first attribute is velocity 
-	//mVoxelVBO.setAttributeBuffer( DENSITY , mVoxelBuffer, 1 , sizeof(Voxel), offsetof(Voxel, Voxel::density) ); // second attribute is density  
+	mVoxelVBO.setAttributeBuffer( DENSITY , mVoxelBuffer, 1 , sizeof(Voxel), offsetof(Voxel, Voxel::density) ); // second attribute is density  
 
 
 	ofBackground(0);
@@ -244,13 +244,7 @@ void ofApp::draw(){
 	
 	}
 	if( mDrawVoxelGrid ){
-		//const GLbyte zero = 255;
-		//mVoxelBuffer.bind(GL_SHADER_STORAGE_BUFFER);
-		//glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_BYTE, GL_RED, GL_BYTE, &zero );
-	//	glClearBufferSubData(GL_SHADER_STORAGE_BUFFER, GL_BYTE, sizeof(Voxel) , mVoxelBuffer.size() , GL_R, GL_BYTE, &zero ); 
 		
-		//mVoxelBuffer.unbind(GL_SHADER_STORAGE_BUFFER);
-	
 
 		mVoxelGridShader.begin();
 
@@ -295,8 +289,16 @@ void ofApp::algorithmChanged(const void* sender ) {
 
 void ofApp::fillVoxelGrid(){
 
-		particlesBuffer.bindBase(GL_SHADER_STORAGE_BUFFER, 0);
-		mVoxelBuffer.bindBase(GL_SHADER_STORAGE_BUFFER,1);
+
+	// clear buffer to write the new values 
+	const GLfloat zero = 0;
+	mVoxelBuffer.bind(GL_SHADER_STORAGE_BUFFER);
+	glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_R32F, GL_RED, GL_FLOAT, &zero );		
+	mVoxelBuffer.unbind(GL_SHADER_STORAGE_BUFFER);
+
+
+	particlesBuffer.bindBase(GL_SHADER_STORAGE_BUFFER, 0);
+	mVoxelBuffer.bindBase(GL_SHADER_STORAGE_BUFFER,1);
 
 	mVoxelComputeShader.begin();
 	

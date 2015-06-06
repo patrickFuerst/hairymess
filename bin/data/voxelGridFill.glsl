@@ -12,7 +12,7 @@ struct Particle{
 
 struct Voxel{
 	vec4 velocity; 
-	//float density; 
+	float density; 
 };
 
 layout(std140, binding=0) buffer particle{
@@ -83,6 +83,7 @@ void main(){
 	//vec4 velocity = voxelGrid[gl_LocalInvocationIndex].velocity;
 	//float density  = voxelGrid[gl_LocalInvocationIndex].density;
 	voxelGrid[voxelIndex].velocity = vec4(1,0,0,1);
+	voxelGrid[voxelIndex].density = 1.0;
 }
 
 
