@@ -97,6 +97,39 @@ int  voxelIndex( const vec4 position ) {
 	return voxelIndex( scaledPosition.x, scaledPosition.y, scaledPosition.z);
 }
 
+vec4 getNormalizedVelocity( const float x, const float y, const float z ){
+
+		const int index = voxelIndex(x, y, z );
+		const float gridDensity = g_voxelGrid[ index ].density;
+		
+		if(gridDensity > 0.0 ){
+				return g_voxelGrid[ index ].velocity / gridDensity;
+		}
+		else{
+				return vec4(0);
+		}
+}
+
+vec4 trilinearVelocityInterpolation( const vec4 position ){
+
+	// position in Voxelgrid space 
+	vec4 scaledPosition = (position - vec4( g_modelTranslation, 0.0) ) / vec4((g_maxBB - g_minBB),1) + 0.5;
+	scaledPosition *= g_gridSize; 
+	vec3 cellIndex = floor( scaledPosition.xyz  ); 
+	vec3 delta = scaledPosition.xyz - cellIndex; 
+
+	return getNormalizedVelocity(cellIndex.x, cellIndex.y, cellIndex.z )  * (1.0 - delta.x) * (1.0 - delta.y ) * (1.0 - delta.z) +
+	getNormalizedVelocity(cellIndex.x, cellIndex.y, cellIndex.z + 1 ) * (1.0 - delta.x) * (1.0 - delta.y ) *  delta.z +
+	getNormalizedVelocity(cellIndex.x, cellIndex.y + 1 , cellIndex.z )  * (1.0 - delta.x) * delta.y * (1.0 - delta.z) +
+	getNormalizedVelocity(cellIndex.x, cellIndex.y + 1, cellIndex.z + 1 ) * (1.0 - delta.x) *  delta.y *  delta.z +
+	getNormalizedVelocity(cellIndex.x + 1, cellIndex.y, cellIndex.z ) * delta.x * (1.0 - delta.y ) * (1.0 - delta.z) + 
+	getNormalizedVelocity(cellIndex.x + 1, cellIndex.y, cellIndex.z + 1  ) * delta.x * (1.0 - delta.y ) * delta.z +
+	getNormalizedVelocity(cellIndex.x + 1, cellIndex.y + 1, cellIndex.z ) * delta.x * delta.y * (1.0 - delta.z) +
+	getNormalizedVelocity(cellIndex.x + 1, cellIndex.y + 1, cellIndex.z  + 1) *  delta.x * delta.y * delta.z;
+
+
+}
+
 
 
 void main(){
@@ -113,15 +146,20 @@ void main(){
 
 	vec4 force = vec4(g_gravityForce,0);
 
-	const int voxelIndex = voxelIndex( oldPosition ); 
-	const vec4 gridVelocity = g_voxelGrid[voxelIndex].velocity;
-	const float gridDensity = g_voxelGrid[voxelIndex].density; 
+	// const int voxelIndex = voxelIndex( oldPosition ); 
+	// const vec4 gridVelocity = g_voxelGrid[voxelIndex].velocity;
+	// const float gridDensity = g_voxelGrid[voxelIndex].density; 
 
 	// friction 
+	// const float frictionCoeff = 0.2; 
+	// if( gridDensity > 0.0 )
+	// 		velocity =  (1.0 - g_friction ) * velocity + g_friction * (gridVelocity/gridDensity ); 
+
+	const vec4 gridVelocity = trilinearVelocityInterpolation( oldPosition ); 
+	// friction 
 	const float frictionCoeff = 0.2; 
-	if( gridDensity > 0.0){
-		velocity =  (1.0 - g_friction ) * velocity + g_friction * (gridVelocity/ gridDensity ); 
-	}
+	velocity =  (1.0 - g_friction ) * velocity + g_friction * (gridVelocity ); 
+
 	simulationAlgorithm(localStrandIndex, localVertexIndex, globalStrandIndex, vertexIndexInStrand, oldPosition, prevPosition, velocity, color, force);
 	
 }

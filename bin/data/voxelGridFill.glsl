@@ -74,7 +74,8 @@ void trilinearInsertDensity( const vec4 position ,  const float value){
 
 	// position in Voxelgrid space 
 	vec4 scaledPosition = (position - vec4( g_modelTranslation, 0.0) ) / vec4((g_maxBB - g_minBB),1) + 0.5;
-	vec3 cellIndex = floor( scaledPosition.xyz * g_gridSize ); 
+	scaledPosition *= g_gridSize; 
+	vec3 cellIndex = floor( scaledPosition.xyz  ); 
 
 	vec3 delta = scaledPosition.xyz - cellIndex; 
 
@@ -95,7 +96,8 @@ void trilinearInsertVelocity( const vec4 position ,  const vec4 velocity){
 
 	// position in Voxelgrid space 
 	vec4 scaledPosition = (position - vec4( g_modelTranslation, 0.0) ) / vec4((g_maxBB - g_minBB),1) + 0.5;
-	vec3 cellIndex = floor( scaledPosition.xyz * g_gridSize ); 
+	scaledPosition *= g_gridSize; 
+	vec3 cellIndex = floor( scaledPosition.xyz  ); 
 
 	vec3 delta = scaledPosition.xyz - cellIndex; 
 
