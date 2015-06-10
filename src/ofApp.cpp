@@ -3,10 +3,12 @@
 
 
 #define NUM_HAIR_PARTICLES 16   // number must not be bigger then WORK_GROUP_SIZE , current 32 max, because glsl for loop limited
-#define HAIR_LENGTH 2.0f
+#define HAIR_LENGTH 1.0f
 
 
 #define WORK_GROUP_SIZE 64
+
+#define VOXEL_GRID_SIZE 128
 
 // glsl locations
 #define POSITION	0
@@ -15,7 +17,8 @@
 #define TEXCOORD    3
 
 #define VELOCITY 4
-#define DENSITY 5 
+#define GRADIENT 5
+#define DENSITY 6 
 
 
 void ofApp::reloadShaders(){
@@ -43,17 +46,23 @@ void ofApp::reloadShaders(){
 	
 
 
-	mVoxelComputeShader.setupShaderFromFile(GL_COMPUTE_SHADER, "voxelGridFill.glsl" ); 
-	mVoxelComputeShader.linkProgram();
-	mVoxelComputeShader.begin();
-		int size2[3]; 
-		glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE,0, &size2[0]);
-		glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE,1, &size2[1]);
-		glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE,2, &size2[2]);
-		int maxInv; 
-		glGetIntegerv(GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS, &maxInv ); 
-		glGetIntegerv(GL_MAX_COMPUTE_WORK_GROUP_COUNT, &maxInv ); 
-	
+	mVoxelComputeShaderFill.setupShaderFromFile(GL_COMPUTE_SHADER, "voxelGridFill.glsl" ); 
+	mVoxelComputeShaderFill.linkProgram();
+
+	mVoxelComputeShaderPostProcess.setupShaderFromFile(GL_COMPUTE_SHADER, "voxelGridPost.glsl" ); 
+	mVoxelComputeShaderPostProcess.linkProgram();
+
+	//mVoxelComputeShaderFill.begin();
+	//	int size2[3]; 
+	//	glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE,0, &size2[0]);
+	//	glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE,1, &size2[1]);
+	//	glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE,2, &size2[2]);
+	//	int maxInv; 
+	//	glGetIntegerv(GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS, &maxInv ); 
+	//	glGetIntegerv(GL_MAX_COMPUTE_WORK_GROUP_COUNT, &maxInv ); 
+	//
+
+
 	/*mVoxelComputeShader.setUniform1i("g_numVerticesPerStrand",NUM_HAIR_PARTICLES);
 	mVoxelComputeShader.setUniform1i("g_numStrandsPerThreadGroup", mNumHairs * mNumHairs / WORK_GROUP_SIZE);	*/
 		
@@ -119,11 +128,12 @@ void ofApp::setup(){
 
 
 	// VOXEL BUFFER
-	mVoxelGridSize = 64;
+	mVoxelGridSize = VOXEL_GRID_SIZE;
 	mVoxelBuffer.allocate( sizeof(Voxel) * mVoxelGridSize * mVoxelGridSize * mVoxelGridSize, GL_STREAM_COPY);
 	mVoxelBuffer.bindBase(GL_SHADER_STORAGE_BUFFER,1);
 	mVoxelVBO.setAttributeBuffer( VELOCITY , mVoxelBuffer, 4 , sizeof(Voxel), offsetof(Voxel, Voxel::velocity)  ); // first attribute is velocity 
-	mVoxelVBO.setAttributeBuffer( DENSITY , mVoxelBuffer, 1 , sizeof(Voxel), offsetof(Voxel, Voxel::density) ); // second attribute is density  
+	mVoxelVBO.setAttributeBuffer( GRADIENT , mVoxelBuffer, 4 , sizeof(Voxel), offsetof(Voxel, Voxel::gradient)  ); // second attribute is gradient 
+	mVoxelVBO.setAttributeBuffer( DENSITY , mVoxelBuffer, 1 , sizeof(Voxel), offsetof(Voxel, Voxel::density) ); // third attribute is density  
 
 
 	ofBackground(0);
@@ -176,21 +186,25 @@ void ofApp::update(){
 
 
 	
-	fillVoxelGrid(); // create the voxel grid 
+	createVoxelGrid(); // create the voxel grid 
 
 
 	//ofMatrix4x4 modelAnimationMatrixDelta = mModelAnimation * mModelAnimationPrevInversed;
 	mModelAnimationPrevInversed = mModelAnimation.getInverse();
 
-	static ofQuaternion first, second; 
+	/*static ofQuaternion first, second; 
 	first.makeRotate(0,0,0,0);
 	second.makeRotate(180,1,1,0);
 	mModelOrientation.slerp( sin(0.2f* ofGetElapsedTimef()), first, second);
 	mModelAnimation.makeIdentityMatrix();
 	mModelAnimation.postMultRotate(mModelOrientation);
-	mModelAnimation.setTranslation( ofVec3f( 0,5.0f*abs( sin( ofGetElapsedTimef() ) ), 0));
+	mModelAnimation.setTranslation( ofVec3f( 0,5.0f*abs( sin( ofGetElapsedTimef() ) ), 0));*/
 
 	mComputeShader.begin();
+
+	
+	particlesBuffer.bindBase(GL_SHADER_STORAGE_BUFFER, 0);
+	mVoxelBuffer.bindBase(GL_SHADER_STORAGE_BUFFER,1);
 
 	glUniformSubroutinesuiv( GL_COMPUTE_SHADER, 1, subroutineUniforms);
 	
@@ -209,7 +223,9 @@ void ofApp::update(){
 	mComputeShader.dispatchCompute( mNumWorkGroups, 1, 1);
 	mComputeShader.end();
 
-
+	
+	particlesBuffer.unbindBase(GL_SHADER_STORAGE_BUFFER, 0);
+	mVoxelBuffer.unbindBase(GL_SHADER_STORAGE_BUFFER,1);
 	
 }
 
@@ -297,7 +313,7 @@ void ofApp::algorithmChanged(const void* sender ) {
 }
 
 
-void ofApp::fillVoxelGrid(){
+void ofApp::createVoxelGrid(){
 
 
 	// clear buffer to write the new values 
@@ -310,18 +326,42 @@ void ofApp::fillVoxelGrid(){
 	particlesBuffer.bindBase(GL_SHADER_STORAGE_BUFFER, 0);
 	mVoxelBuffer.bindBase(GL_SHADER_STORAGE_BUFFER,1);
 
-	mVoxelComputeShader.begin();
+	mVoxelComputeShaderFill.begin();
 	
-	mVoxelComputeShader.setUniform3f("g_modelTranslation", mModelAnimation.getTranslation() );
-	mVoxelComputeShader.setUniform3f( "g_minBB" , mSimulationBoundingBox.min);
-	mVoxelComputeShader.setUniform3f( "g_maxBB" , mSimulationBoundingBox.max);
-	mVoxelComputeShader.setUniform1i( "g_gridSize", mVoxelGridSize); 
-	mVoxelComputeShader.dispatchCompute(mNumWorkGroups , 1 , 1);
+	mVoxelComputeShaderFill.setUniform3f("g_modelTranslation", mModelAnimation.getTranslation() );
+	mVoxelComputeShaderFill.setUniform3f( "g_minBB" , mSimulationBoundingBox.min);
+	mVoxelComputeShaderFill.setUniform3f( "g_maxBB" , mSimulationBoundingBox.max);
+	mVoxelComputeShaderFill.setUniform1i( "g_gridSize", mVoxelGridSize); 
+	mVoxelComputeShaderFill.dispatchCompute(mNumWorkGroups , 1 , 1);
 
-	mVoxelComputeShader.end();
+	mVoxelComputeShaderFill.end();
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT); // wait till we finished writing the voxelgrid
 
+	particlesBuffer.unbindBase(GL_SHADER_STORAGE_BUFFER,0); 
+	mVoxelBuffer.unbindBase(GL_SHADER_STORAGE_BUFFER,1);
 
+
+	// post process voxel grid - normalize velocity and create gradient of density field
+
+	mVoxelBuffer.bindBase(GL_SHADER_STORAGE_BUFFER,1);
+
+	mVoxelComputeShaderPostProcess.begin();
+	
+	//mVoxelComputeShaderPostProcess.setUniform3f("g_modelTranslation", mModelAnimation.getTranslation() );
+	//mVoxelComputeShaderPostProcess.setUniform3f( "g_minBB" , mSimulationBoundingBox.min);
+	//mVoxelComputeShaderPostProcess.setUniform3f( "g_maxBB" , mSimulationBoundingBox.max);
+	mVoxelComputeShaderPostProcess.setUniform1i( "g_gridSize", mVoxelGridSize); 
+
+	int voxelComputeLocalSize = 8;
+	int voxelGridWorkGroups  = ((mVoxelGridSize + (voxelComputeLocalSize-1))/ voxelComputeLocalSize);
+	mVoxelComputeShaderPostProcess.dispatchCompute(voxelGridWorkGroups , voxelGridWorkGroups , voxelGridWorkGroups);
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT); // wait till we finished writing the voxelgrid
+
+	mVoxelComputeShaderPostProcess.end();
+
+	
+	particlesBuffer.unbindBase(GL_SHADER_STORAGE_BUFFER,0); 
+	mVoxelBuffer.unbindBase(GL_SHADER_STORAGE_BUFFER,1);
 }
 
 

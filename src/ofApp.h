@@ -31,7 +31,7 @@ class ofApp : public ofBaseApp{
 		void gotMessage(ofMessage msg);
 		
 
-		void fillVoxelGrid();
+		void createVoxelGrid();
 		AABB calculateBoundingBox( ofMesh &mesh, float hairlength  );
 
 
@@ -48,12 +48,13 @@ class ofApp : public ofBaseApp{
 
 		struct Voxel{
 			ofVec4f velocity;
+			ofVec4f gradient;
 			float density; 
 			int pad[3];
 		}; 
 
 
-		ofShader mVoxelComputeShader; 
+		ofShader mVoxelComputeShaderFill, mVoxelComputeShaderPostProcess; 
 		int mVoxelGridSize; 
 
 		ofShader mVoxelGridShader;

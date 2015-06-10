@@ -12,6 +12,7 @@ struct Particle{
 
 struct Voxel{
 	vec4 velocity; 
+	vec4 gradient; 
 	float density; // could be int
 };
 

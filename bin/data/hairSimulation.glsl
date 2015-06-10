@@ -13,7 +13,8 @@ struct Particle{
 
 
 struct Voxel{
-	vec4 velocity; 
+	vec4 velocity;
+	vec4 gradient;
 	float density; // could be int
 };
 
@@ -156,9 +157,14 @@ void main(){
 	// 		velocity =  (1.0 - g_friction ) * velocity + g_friction * (gridVelocity/gridDensity ); 
 
 	const vec4 gridVelocity = trilinearVelocityInterpolation( oldPosition ); 
+	const vec4 gridGradient = g_voxelGrid[ voxelIndex( oldPosition )].gradient;
 	// friction 
 	const float frictionCoeff = 0.2; 
 	velocity =  (1.0 - g_friction ) * velocity + g_friction * (gridVelocity ); 
+
+	// repulsion
+	const float repulsionCoeff = 0.02;
+	velocity = velocity - repulsionCoeff * gridGradient/g_timeStep;
 
 	simulationAlgorithm(localStrandIndex, localVertexIndex, globalStrandIndex, vertexIndexInStrand, oldPosition, prevPosition, velocity, color, force);
 	

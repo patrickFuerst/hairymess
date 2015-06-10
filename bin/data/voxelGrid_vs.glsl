@@ -6,7 +6,8 @@
 #define TEXCOORD    3
 
 #define VELOCITY 4
-#define DENSITY 5 
+#define GRADIENT 5
+#define DENSITY 6 
 
 
 
@@ -16,6 +17,7 @@ precision highp int;
 //layout(std430, column_major) buffer; AMD bug
 
 layout(location = VELOCITY) in vec4 velocity;
+layout(location = GRADIENT) in vec4 gradient ;
 layout(location = DENSITY) in float density ;
 
 //layout(std140, column_major) uniform;
@@ -57,6 +59,6 @@ void main()
 	gl_Position = modelViewProjectionMatrix * g_modelMatrix * vec4(gl_Position.xyz,1.0);
 	float alpha = density > 0.0 ? 1.0 : 0.0;
 	//Out.color  = vec4(vec3(density), alpha);
-	Out.color  = vec4(velocity.xyz/density,alpha);
+	Out.color  = vec4(gradient.xyz,alpha);
 }
 
