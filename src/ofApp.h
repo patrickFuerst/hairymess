@@ -31,7 +31,7 @@ class ofApp : public ofBaseApp{
 		void gotMessage(ofMessage msg);
 		
 
-		void createVoxelGrid();
+		void createVoxelGrid( float timeStep);
 		AABB calculateBoundingBox( ofMesh &mesh, float hairlength  );
 
 
@@ -54,7 +54,7 @@ class ofApp : public ofBaseApp{
 		}; 
 
 
-		ofShader mVoxelComputeShaderFill, mVoxelComputeShaderPostProcess; 
+		ofShader mVoxelComputeShaderFill, mVoxelComputeShaderPostProcess, mVoxelComputeShaderDiffuse; 
 		int mVoxelGridSize; 
 
 		ofShader mVoxelGridShader;
@@ -67,7 +67,7 @@ class ofApp : public ofBaseApp{
 
 		ofShader mHairshader; 
 		vector<Particle> particles;
-		ofBufferObject particlesBuffer, mVoxelBuffer;
+		ofBufferObject particlesBuffer, mVoxelBuffer, mDensityBuffer1, mDensityBuffer2; 
 
 		ofMesh mFurryMesh;
 		int mNumHairs; 

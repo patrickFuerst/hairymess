@@ -128,12 +128,19 @@ void ofApp::setup(){
 
 
 	// VOXEL BUFFER
+
+	//mDensityBuffer1.allocate( sizeof(float)* mVoxelGridSize * mVoxelGridSize * mVoxelGridSize, GL_STREAM_COPY);
+	//mDensityBuffer2.allocate( sizeof(float)* mVoxelGridSize * mVoxelGridSize * mVoxelGridSize, GL_STREAM_COPY);
+
+
+
 	mVoxelGridSize = VOXEL_GRID_SIZE;
 	mVoxelBuffer.allocate( sizeof(Voxel) * mVoxelGridSize * mVoxelGridSize * mVoxelGridSize, GL_STREAM_COPY);
 	mVoxelBuffer.bindBase(GL_SHADER_STORAGE_BUFFER,1);
 	mVoxelVBO.setAttributeBuffer( VELOCITY , mVoxelBuffer, 4 , sizeof(Voxel), offsetof(Voxel, Voxel::velocity)  ); // first attribute is velocity 
 	mVoxelVBO.setAttributeBuffer( GRADIENT , mVoxelBuffer, 4 , sizeof(Voxel), offsetof(Voxel, Voxel::gradient)  ); // second attribute is gradient 
 	mVoxelVBO.setAttributeBuffer( DENSITY , mVoxelBuffer, 1 , sizeof(Voxel), offsetof(Voxel, Voxel::density) ); // third attribute is density  
+	//mVoxelVBO.setAttributeBuffer( DENSITY , mDensityBuffer1, 1 , sizeof(float), 0 ); // third attribute is density  
 
 
 	ofBackground(0);
@@ -167,6 +174,9 @@ void ofApp::setup(){
 
 	mSimulationBoundingBox = calculateBoundingBox( mFurryMesh, HAIR_LENGTH ); 
 	mDrawBoundingBox = false; 
+
+
+
 }
 
 //--------------------------------------------------------------
@@ -186,19 +196,19 @@ void ofApp::update(){
 
 
 	
-	createVoxelGrid(); // create the voxel grid 
+	createVoxelGrid( timeStep ); // create the voxel grid 
 
 
 	//ofMatrix4x4 modelAnimationMatrixDelta = mModelAnimation * mModelAnimationPrevInversed;
 	mModelAnimationPrevInversed = mModelAnimation.getInverse();
 
-	/*static ofQuaternion first, second; 
-	first.makeRotate(0,0,0,0);
-	second.makeRotate(180,1,1,0);
-	mModelOrientation.slerp( sin(0.2f* ofGetElapsedTimef()), first, second);
-	mModelAnimation.makeIdentityMatrix();
-	mModelAnimation.postMultRotate(mModelOrientation);
-	mModelAnimation.setTranslation( ofVec3f( 0,5.0f*abs( sin( ofGetElapsedTimef() ) ), 0));*/
+	//static ofQuaternion first, second; 
+	//first.makeRotate(0,0,0,0);
+	//second.makeRotate(180,1,1,0);
+	//mModelOrientation.slerp( sin(0.2f* ofGetElapsedTimef()), first, second);
+	//mModelAnimation.makeIdentityMatrix();
+	//mModelAnimation.postMultRotate(mModelOrientation);
+	//mModelAnimation.setTranslation( ofVec3f( 0,5.0f*abs( sin( ofGetElapsedTimef() ) ), 0));
 
 	mComputeShader.begin();
 
@@ -313,7 +323,7 @@ void ofApp::algorithmChanged(const void* sender ) {
 }
 
 
-void ofApp::createVoxelGrid(){
+void ofApp::createVoxelGrid(float timeStep){
 
 
 	// clear buffer to write the new values 
@@ -322,9 +332,17 @@ void ofApp::createVoxelGrid(){
 	glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_R32F, GL_RED, GL_FLOAT, &zero );		
 	mVoxelBuffer.unbind(GL_SHADER_STORAGE_BUFFER);
 
+	/*mDensityBuffer1.bind(GL_SHADER_STORAGE_BUFFER);
+	glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_R32F, GL_RED, GL_FLOAT, &zero );		
+	mDensityBuffer1.unbind(GL_SHADER_STORAGE_BUFFER);
+
+	mDensityBuffer2.bind(GL_SHADER_STORAGE_BUFFER);
+	glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_R32F, GL_RED, GL_FLOAT, &zero );		
+	mDensityBuffer2.unbind(GL_SHADER_STORAGE_BUFFER);*/
 
 	particlesBuffer.bindBase(GL_SHADER_STORAGE_BUFFER, 0);
 	mVoxelBuffer.bindBase(GL_SHADER_STORAGE_BUFFER,1);
+	//mDensityBuffer1.bindBase( GL_SHADER_STORAGE_BUFFER,2);
 
 	mVoxelComputeShaderFill.begin();
 	
@@ -339,7 +357,14 @@ void ofApp::createVoxelGrid(){
 
 	particlesBuffer.unbindBase(GL_SHADER_STORAGE_BUFFER,0); 
 	mVoxelBuffer.unbindBase(GL_SHADER_STORAGE_BUFFER,1);
+	//mDensityBuffer1.unbindBase( GL_SHADER_STORAGE_BUFFER,2);
 
+
+
+	//TODO diffuse density grid!!
+	
+	int voxelComputeLocalSize = 8;
+	int voxelGridWorkGroups  = ((mVoxelGridSize + (voxelComputeLocalSize-1))/ voxelComputeLocalSize);
 
 	// post process voxel grid - normalize velocity and create gradient of density field
 
@@ -347,13 +372,8 @@ void ofApp::createVoxelGrid(){
 
 	mVoxelComputeShaderPostProcess.begin();
 	
-	//mVoxelComputeShaderPostProcess.setUniform3f("g_modelTranslation", mModelAnimation.getTranslation() );
-	//mVoxelComputeShaderPostProcess.setUniform3f( "g_minBB" , mSimulationBoundingBox.min);
-	//mVoxelComputeShaderPostProcess.setUniform3f( "g_maxBB" , mSimulationBoundingBox.max);
 	mVoxelComputeShaderPostProcess.setUniform1i( "g_gridSize", mVoxelGridSize); 
 
-	int voxelComputeLocalSize = 8;
-	int voxelGridWorkGroups  = ((mVoxelGridSize + (voxelComputeLocalSize-1))/ voxelComputeLocalSize);
 	mVoxelComputeShaderPostProcess.dispatchCompute(voxelGridWorkGroups , voxelGridWorkGroups , voxelGridWorkGroups);
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT); // wait till we finished writing the voxelgrid
 
@@ -387,8 +407,8 @@ ofApp::AABB ofApp::calculateBoundingBox( ofMesh &mesh , float hairlength ){
 						
 	}
 
-	min -= hairlength;
-	max += hairlength; 
+	min -=  2.0f * hairlength;
+	max += 2.0f * hairlength; 
 
 	boundingBox.min = min;
 	boundingBox.max = max; 

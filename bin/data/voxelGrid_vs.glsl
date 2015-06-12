@@ -51,9 +51,9 @@ void main()
 	int voxelIndex_z = int( mod(floor(gl_VertexID /  (g_gridSize) ), g_gridSize) ) ;
 	int voxelIndex_y = int(floor(gl_VertexID / (g_gridSize*g_gridSize))); 
 
-	gl_Position.x = g_minBB.x + voxelIndex_x  *widthDelta;
-	gl_Position.y = g_minBB.y + voxelIndex_y  *heigthDelta;
-	gl_Position.z = g_minBB.z + voxelIndex_z  *depthDelta;
+	gl_Position.x = g_minBB.x + voxelIndex_x  *widthDelta  + widthDelta/2.0;
+	gl_Position.y = g_minBB.y + voxelIndex_y  *heigthDelta + heigthDelta/2.0;
+	gl_Position.z = g_minBB.z + voxelIndex_z  *depthDelta + depthDelta/2.0;
 	//gl_Position = modelViewProjectionMatrix * position ;
 	//gl_Position =  modelViewProjectionMatrix * position;
 	gl_Position = modelViewProjectionMatrix * g_modelMatrix * vec4(gl_Position.xyz,1.0);
