@@ -13,7 +13,8 @@ subroutine(hairSimulationAlgorithm) void PBDApproach( const uint localStrandInde
 
 
 	const vec4 oldPosition = position; 
-	sharedPos[localVertexIndex]  = verletIntegration( sharedPos[localVertexIndex], prevPosition, force, sharedFixed[localVertexIndex]);
+	//sharedPos[localVertexIndex]  = verletIntegration( sharedPos[localVertexIndex], prevPosition, force, sharedFixed[localVertexIndex]);
+	sharedPos[localVertexIndex]  = positionIntegration( oldPosition , velocity, force, sharedFixed[localVertexIndex]);
 
 
 	const uint index0 = localVertexIndex*2;
@@ -43,7 +44,8 @@ subroutine(hairSimulationAlgorithm) void PBDApproach( const uint localStrandInde
 
 	}
 
+	vec4 newVelocity = vec4((sharedPos[localVertexIndex].xyz - oldPosition.xyz) / g_timeStep ,0.0); 
 
-	updateParticle(sharedPos[localVertexIndex], oldPosition,velocity,color );
+	updateParticle(sharedPos[localVertexIndex], oldPosition,newVelocity,color );
 
 }

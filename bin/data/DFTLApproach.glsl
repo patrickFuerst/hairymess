@@ -14,10 +14,23 @@ subroutine(hairSimulationAlgorithm) void DFTLApproach( const uint localStrandInd
 
 	
 	const vec4 oldPosition = position;
-	sharedPos[localVertexIndex]  = positionIntegration( sharedPos[localVertexIndex], velocity, force, sharedFixed[localVertexIndex]);
+
+	// calculate the velocity according to the ftl approach 
+	// first approach was to calculate it at the end and add it to the newVelocity. But this results to that this "guiding" velocity appears in the voxel grid and distorts the all other calculation
+	vec4 distanceToNext = vec4(0,0,0,0);
+	if(vertexIndexInStrand < g_numVerticesPerStrand-1){
+		distanceToNext.xyz = sharedPos[localVertexIndex].xyz - sharedPos[localVertexIndex+1].xyz ;
+	}
+	vec4 derivedVelocity = velocity - g_ftlDamping *distanceToNext / g_timeStep; 
+
+
+	// explicit euler integration 
+	sharedPos[localVertexIndex]  = positionIntegration( sharedPos[localVertexIndex], derivedVelocity, force, sharedFixed[localVertexIndex]);
 
 	memoryBarrierShared();
+ 	groupMemoryBarrier();
 
+ 	// apply length constraint
 	if(vertexIndexInStrand  == 0){
 
 		for(int i= 0; i < g_numVerticesPerStrand-1; i++){
@@ -29,13 +42,8 @@ subroutine(hairSimulationAlgorithm) void DFTLApproach( const uint localStrandInd
 	}
 
  	groupMemoryBarrier();
- 	vec4 distanceToNext = vec4(0,0,0,0);
-	if(vertexIndexInStrand < g_numVerticesPerStrand-1){
-		distanceToNext.xyz = sharedPos[localVertexIndex].xyz - sharedPos[localVertexIndex+1].xyz ;
-	}
-	vec4 derivedVelocity = vec4((sharedPos[localVertexIndex].xyz - oldPosition.xyz) / g_timeStep - g_ftlDamping *distanceToNext.xyz / g_timeStep,0.0); 
 
-	//memoryBarrierShared();
+	vec4 newVelocity = vec4((sharedPos[localVertexIndex].xyz - oldPosition.xyz) / g_timeStep ,0.0); 
 
-	updateParticle(sharedPos[gl_LocalInvocationID.x], oldPosition,derivedVelocity,color );
+	updateParticle(sharedPos[gl_LocalInvocationID.x], oldPosition,newVelocity,color );
 }

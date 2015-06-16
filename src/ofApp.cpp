@@ -8,7 +8,7 @@
 
 #define WORK_GROUP_SIZE 64
 
-#define VOXEL_GRID_SIZE 128
+#define VOXEL_GRID_SIZE 32
 
 // glsl locations
 #define POSITION	0
@@ -140,7 +140,7 @@ void ofApp::setup(){
 	camera.setPosition(10,15,10);
 	camera.lookAt(ofVec3f(0,0,0));
 	
-	mFurryMesh = ofMesh::sphere(4,120 ); 
+	mFurryMesh = ofMesh::sphere(4,20 ); 
 	mNumHairs = mFurryMesh.getNumVertices();
 	particles.resize( mNumHairs * NUM_HAIR_PARTICLES);
 
@@ -312,7 +312,7 @@ void ofApp::draw(){
 		ofSetColor(ofColor::red);
 		ofPushMatrix();
 		ofMultViewMatrix(mModelAnimation);
-		mFurryMesh.draw();
+	//	mFurryMesh.draw();
 		ofPopMatrix();
 
 		popGlDebugGroup();
