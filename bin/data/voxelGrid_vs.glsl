@@ -74,7 +74,10 @@ void main()
 	gl_Position = modelViewProjectionMatrix * g_modelMatrix * vec4(gl_Position.xyz,1.0);
 	
 	// just look at voxels which are not empty
-	float alpha = density > 0.0 ? 1.0 : 0.0;
-	Out.color  = vec4(gradient.xyz,alpha);
+	// float alpha = density > 0.0 ? 1.0 : 0.0;
+	// Out.color  = vec4(density,density,density,alpha);
+
+	float alpha = length(gradient) > 0.0 ? 1.0 : 0.0; 
+	Out.color = vec4(gradient.xyz, alpha);
 }
 

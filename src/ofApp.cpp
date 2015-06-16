@@ -8,7 +8,7 @@
 
 #define WORK_GROUP_SIZE 64
 
-#define VOXEL_GRID_SIZE 32
+#define VOXEL_GRID_SIZE 64
 
 // glsl locations
 #define POSITION	0
@@ -88,6 +88,7 @@ void ofApp::updateUBO( float deltaTime ){
 	mSimulationData.numIterationsPBD = mNumConstraintIterations; 
 	mSimulationData.stiffness = mStiffness;
 	mSimulationData.friction = mFriction;
+	mSimulationData.repulsion = mRepulsion;
 	mSimulationData.ftlDamping = mFTLDistanceDamping;
 	mSimulationData.deltaTime = deltaTime;
 
@@ -140,7 +141,7 @@ void ofApp::setup(){
 	camera.setPosition(10,15,10);
 	camera.lookAt(ofVec3f(0,0,0));
 	
-	mFurryMesh = ofMesh::sphere(4,20 ); 
+	mFurryMesh = ofMesh::sphere(4,200 ); 
 	mNumHairs = mFurryMesh.getNumVertices();
 	particles.resize( mNumHairs * NUM_HAIR_PARTICLES);
 
@@ -196,11 +197,12 @@ void ofApp::setup(){
 
 	gui.setup();
 	mShaderUniforms.setName("shader params");
-	mShaderUniforms.add( mVelocityDamping.set("g_velocityDamping", 0.5f, 0,1));
-	mShaderUniforms.add( mNumConstraintIterations.set("g_numIterations", 25, 0,200));
-	mShaderUniforms.add( mStiffness.set("g_stiffness",1.0f, 0,1));
-	mShaderUniforms.add( mFriction.set("g_friction",0.1f, 0,1.0));
-	mShaderUniforms.add( mFTLDistanceDamping.set("g_ftlDamping", 1.0,0.0,1.0));
+	mShaderUniforms.add( mVelocityDamping.set("velocityDamping", 0.5f, 0,1));
+	mShaderUniforms.add( mNumConstraintIterations.set("numIterations", 25, 0,200));
+	mShaderUniforms.add( mStiffness.set("stiffness",1.0f, 0,1));
+	mShaderUniforms.add( mFriction.set("friction",0.1f, 0,1.0));
+	mShaderUniforms.add( mRepulsion.set("repulsion",0.1f, 0,1.0));
+	mShaderUniforms.add( mFTLDistanceDamping.set("ftlDamping", 1.0,0.0,1.0));
 	mSimulationAlgorithms.setName( "shader algorithms");
 	
 	mPBDAlgorithm.setup( "PBD Algorithm");
@@ -243,16 +245,16 @@ void ofApp::update(){
 		timeStep = 0.02;
 
 
-	//ofMatrix4x4 modelAnimationMatrixDelta = mModelAnimation * mModelAnimationPrevInversed;
-	//mModelAnimationPrevInversed = mModelAnimation.getInverse();
+	ofMatrix4x4 modelAnimationMatrixDelta = mModelAnimation * mModelAnimationPrevInversed;
+	mModelAnimationPrevInversed = mModelAnimation.getInverse();
 
-	//static ofQuaternion first, second; 
-	//first.makeRotate(0,0,0,0);
-	//second.makeRotate(180,1,1,0);
-	//mModelOrientation.slerp( sin(0.2f* ofGetElapsedTimef()), first, second);
-	//mModelAnimation.makeIdentityMatrix();
-	//mModelAnimation.postMultRotate(mModelOrientation);
-	//mModelAnimation.setTranslation( ofVec3f( 0,5.0f*abs( sin( ofGetElapsedTimef() ) ), 0));
+	static ofQuaternion first, second; 
+	first.makeRotate(0,0,0,0);
+	second.makeRotate(180,1,1,0);
+	mModelOrientation.slerp( sin(0.2f* ofGetElapsedTimef()), first, second);
+	mModelAnimation.makeIdentityMatrix();
+	mModelAnimation.postMultRotate(mModelOrientation);
+	mModelAnimation.setTranslation( ofVec3f( 0,5.0f*abs( sin( ofGetElapsedTimef() ) ), 0));
 
 
 	updateUBO( timeStep ); 
@@ -312,7 +314,7 @@ void ofApp::draw(){
 		ofSetColor(ofColor::red);
 		ofPushMatrix();
 		ofMultViewMatrix(mModelAnimation);
-	//	mFurryMesh.draw();
+		mFurryMesh.draw();
 		ofPopMatrix();
 
 		popGlDebugGroup();

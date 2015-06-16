@@ -72,6 +72,7 @@ class ofApp : public ofBaseApp{
 			int numIterationsPBD;
 			float stiffness;
 			float friction; 
+			float repulsion;
 			float ftlDamping; 
 			float deltaTime; 
 		
@@ -150,7 +151,7 @@ class ofApp : public ofBaseApp{
 
 		
 		ofxPanel gui;
-		ofParameter<float> mVelocityDamping,  mStiffness, mFriction ; 
+		ofParameter<float> mVelocityDamping,  mStiffness, mFriction, mRepulsion ; 
 		ofParameterGroup mShaderUniforms;
 		ofxGuiGroup mSimulationAlgorithms; 
 		ofxButton mPBDAlgorithm, mDFTLAlgorithm; 

@@ -40,6 +40,7 @@ layout(std140, binding = SIMULATION_DATA_BINDING ) uniform SimulationData {
 	int g_numIterations;
 	float g_stiffness;
 	float g_friction; 
+	float g_repulsion;
 	float g_ftlDamping; 
 	float g_timeStep; 
 
@@ -121,6 +122,17 @@ vec4 getVelocity( const float x, const float y, const float z ){
 	
 }
 
+vec4 getGradient( const float x, const float y, const float z ){
+
+	if (x < 0 || x >= g_gridSize) return vec4(0);
+	if (y < 0 || y >= g_gridSize) return vec4(0); 
+	if (z < 0 || z >= g_gridSize) return vec4(0); 
+	
+	const int index = voxelIndex(x, y, z );
+	return g_voxelGrid[ index ].gradient;
+	
+}
+
 vec4 trilinearVelocityInterpolation( const vec4 position ){
 
 	// position in Voxelgrid space 
@@ -141,7 +153,25 @@ vec4 trilinearVelocityInterpolation( const vec4 position ){
 
 }
 
+vec4 trilinearGradientInterpolation( const vec4 position ){
 
+	// position in Voxelgrid space 
+	vec4 scaledPosition = (position - vec4( g_modelTranslation.xyz, 0.0) ) / vec4((g_maxBB.xyz - g_minBB.xyz),1) + 0.5;
+	scaledPosition *= g_gridSize; 
+	vec3 cellIndex = floor( scaledPosition.xyz  ); 
+	vec3 delta = scaledPosition.xyz - cellIndex; 
+
+	return getGradient(cellIndex.x, cellIndex.y, cellIndex.z )  * (1.0 - delta.x) * (1.0 - delta.y ) * (1.0 - delta.z) +
+	getGradient(cellIndex.x, cellIndex.y, cellIndex.z + 1 ) * (1.0 - delta.x) * (1.0 - delta.y ) *  delta.z +
+	getGradient(cellIndex.x, cellIndex.y + 1 , cellIndex.z )  * (1.0 - delta.x) * delta.y * (1.0 - delta.z) +
+	getGradient(cellIndex.x, cellIndex.y + 1, cellIndex.z + 1 ) * (1.0 - delta.x) *  delta.y *  delta.z +
+	getGradient(cellIndex.x + 1, cellIndex.y, cellIndex.z ) * delta.x * (1.0 - delta.y ) * (1.0 - delta.z) + 
+	getGradient(cellIndex.x + 1, cellIndex.y, cellIndex.z + 1  ) * delta.x * (1.0 - delta.y ) * delta.z +
+	getGradient(cellIndex.x + 1, cellIndex.y + 1, cellIndex.z ) * delta.x * delta.y * (1.0 - delta.z) +
+	getGradient(cellIndex.x + 1, cellIndex.y + 1, cellIndex.z  + 1) *  delta.x * delta.y * delta.z;
+
+
+}
 
 void main(){
 	
@@ -162,13 +192,11 @@ void main(){
 	
 	//const vec4 gridVelocity = g_voxelGrid[ voxelIndex ].velocity; 
 	// friction 
-	const float frictionCoeff = 0.2; 
 	velocity =  (1.0 - g_friction ) * velocity + g_friction * (interpolatedVelocity ); 
 
 	// repulsion
-	//const vec4 gridGradient = g_voxelGrid[ voxelIndex ].gradient;
-	//const float repulsionCoeff = 0.02;
-	//velocity = velocity + repulsionCoeff * vec4(gridGradient.xyz,0.0)/g_timeStep;
+	const vec4 gridGradient = trilinearGradientInterpolation(oldPosition) ;
+	velocity = velocity + g_repulsion * vec4(gridGradient.xyz,0.0)/g_timeStep;
 
 	simulationAlgorithm(localStrandIndex, localVertexIndex, globalStrandIndex, vertexIndexInStrand, oldPosition, prevPosition, velocity, color, force);
 	
