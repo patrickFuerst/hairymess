@@ -3,6 +3,13 @@
 
 #define LOCAL_GROUP_SIZE_X 64
 
+#define SIMULATION_DATA_BINDING 0 
+#define CONST_SIMULATION_DATA_BINDING 1
+#define MODEL_DATA_BINDING 2
+#define VOXEL_GRID_DATA_BINDING 3 
+#define CONST_VOXEL_GRID_DATA_BINDING 4
+
+
 struct Particle{
 	vec4 pos;
 	vec4 prevPos;
@@ -27,34 +34,39 @@ layout(std140, binding=1) buffer voxel{
 };
 
 
-// model properties
-uniform mat4 g_modelMatrix; // need this to transform the fixed vertices if model moves
-uniform mat4 g_modelMatrixPrevInverted;
-uniform vec3 g_gravityForce;
 
-// strand properties
-uniform float g_stiffness;
-uniform float g_strandLength;
-uniform float g_friction; 
+layout(std140, binding = SIMULATION_DATA_BINDING ) uniform SimulationData { 
+	float g_velocityDamping;
+	int g_numIterations;
+	float g_stiffness;
+	float g_friction; 
+	float g_ftlDamping; 
+	float g_timeStep; 
 
-// simulation properties
-uniform float g_velocityDamping; 
-uniform int g_numIterations; 
-uniform float g_timeStep;
-uniform float g_ftlDamping;
+};
 
-// additional compute shader properties
-uniform int g_numVerticesPerStrand;
-uniform int g_numStrandsPerThreadGroup;
+layout( std140, binding = CONST_SIMULATION_DATA_BINDING ) uniform ConstSimulationData{
+	vec4 g_gravityForce;
+	int g_numVerticesPerStrand; 
+	int g_numStrandsPerThreadGroup;
+	float g_strandLength;	
 
-// voxel grid properties
-uniform vec3 g_minBB;
-uniform vec3 g_maxBB; 	
-uniform int g_gridSize;
-uniform vec3 g_modelTranslation; 
+};
 
+layout( std140, binding = MODEL_DATA_BINDING ) uniform ModelData{
+	mat4 g_modelMatrix; 
+	mat4 g_modelMatrixPrevInverted;
+	vec4 g_modelTranslation; 
 
-uniform bool g_useFTL; 
+};
+
+layout( std140, binding = CONST_VOXEL_GRID_DATA_BINDING ) uniform ConstVoxelGridData{
+	vec4 g_minBB;
+	vec4 g_maxBB; 	
+	int g_gridSize;
+
+};
+
 
 shared vec4 sharedPos[LOCAL_GROUP_SIZE_X];
 shared bool sharedFixed[LOCAL_GROUP_SIZE_X];
@@ -93,7 +105,7 @@ int  voxelIndex( const float x, const float y, const float z ) {
 int  voxelIndex( const vec4 position ) {
 
 	// position in Voxelgrid space 
-	vec4 scaledPosition = (position - vec4( g_modelTranslation, 0.0) ) / vec4((g_maxBB - g_minBB),1) + 0.5;
+	vec4 scaledPosition = (position - vec4( g_modelTranslation.xyz, 0.0) ) / vec4((g_maxBB.xyz - g_minBB.xyz),1) + 0.5;
 	scaledPosition *= g_gridSize; 
 	return voxelIndex( scaledPosition.x, scaledPosition.y, scaledPosition.z);
 }
@@ -139,7 +151,7 @@ void main(){
 
 	sharedFixed[localVertexIndex] = p[gl_GlobalInvocationID.x].fix;
 
-	vec4 force = vec4(g_gravityForce,0);
+	vec4 force = g_gravityForce;
 	 const int voxelIndex = voxelIndex( oldPosition ); 
 	
 	// const vec4 gridVelocity = g_voxelGrid[voxelIndex].velocity;

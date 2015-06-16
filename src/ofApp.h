@@ -2,6 +2,7 @@
 
 #include "ofMain.h"
 #include "ofBufferObject.h"
+
 #include "ofxGui.h"
 
 class ofApp : public ofBaseApp{
@@ -16,9 +17,12 @@ class ofApp : public ofBaseApp{
 		void setup();
 		void update();
 		void draw();
+		void exit();
+
 		void dirAsColorChanged(bool & dirAsColor);
 
 		void reloadShaders();
+		void updateUBO( float deltaTime);
 
 		void keyPressed(int key);
 		void keyReleased(int key);
@@ -37,6 +41,8 @@ class ofApp : public ofBaseApp{
 
 		void algorithmChanged(const void* sender);
 
+
+		/// Shader Storgae Buffers
 		struct Particle{
 			ofVec4f pos;
 			ofVec4f prevPos;
@@ -53,6 +59,62 @@ class ofApp : public ofBaseApp{
 			int pad[3];
 		}; 
 
+
+		/// Uniform Buffer Objects structure
+
+		struct SimulationData{ 
+			float velocityDamping;
+			int numIterationsPBD;
+			float stiffness;
+			float friction; 
+			float ftlDamping; 
+			float deltaTime; 
+		
+		}mSimulationData;
+
+
+		struct ConstSimulationData{
+			ofVec4f gravityForce;
+			int numVerticesPerStrand; 
+			int numVerticesPerThreadGroup;
+			float strandLength;	
+		
+		}mConstSimulationData;
+
+		struct ModelData{
+			ofMatrix4x4 modelMatrix; 
+			ofMatrix4x4 modelMatrixPrevInverted;
+			ofVec4f modelTranslation; 
+
+		}mModelData;
+		
+
+		struct ConstVoxelGridData{
+			ofVec4f minBB;
+			ofVec4f maxBB; 
+			int gridSize; 
+
+		}mConstVoxelGridData;
+
+		struct VoxelGridData{
+			float deltaTime; 
+		
+		}mVoxelGridData;
+
+		
+		struct UniformBuffers {  // struct helps us with scoping, because the names of data structs are the same
+			enum  
+			{
+				SimulationData = 0, 
+				ConstSimulationData,
+				ModelData,
+				VoxelGridData,
+				ConstVoxelGridData,
+				Size
+			};
+		};
+
+		GLuint mUbos[UniformBuffers::Size]; 
 
 		ofShader mVoxelComputeShaderFill, mVoxelComputeShaderPostProcess, mVoxelComputeShaderDiffuse; 
 		int mVoxelGridSize; 

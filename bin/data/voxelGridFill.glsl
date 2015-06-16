@@ -4,6 +4,14 @@
 
 #define LOCAL_GROUP_SIZE_X 64
 
+
+#define SIMULATION_DATA_BINDING 0 
+#define CONST_SIMULATION_DATA_BINDING 1
+#define MODEL_DATA_BINDING 2
+#define VOXEL_GRID_DATA_BINDING 3 
+#define CONST_VOXEL_GRID_DATA_BINDING 4
+
+
 struct Particle{
 	vec4 pos;
 	vec4 prevPos;
@@ -30,16 +38,19 @@ volatile layout(std140, binding=1) buffer voxel{
 // };
 
 
+layout( std140, binding = MODEL_DATA_BINDING ) uniform ModelData{
+	mat4 g_modelMatrix; 
+	mat4 g_modelMatrixPrevInverted;
+	vec4 g_modelTranslation; 
 
-// additional compute shader properties
-//uniform int g_numVerticesPerStrand;
-//uniform int g_numStrandsPerThreadGroup;
+};
 
-uniform vec3 g_modelTranslation; 
-uniform vec3 g_minBB;
-uniform vec3 g_maxBB; 	
-uniform int g_gridSize;
+layout( std140, binding = CONST_VOXEL_GRID_DATA_BINDING ) uniform ConstVoxelGridData{
+	vec4 g_minBB;
+	vec4 g_maxBB; 	
+	int g_gridSize;
 
+};
 shared vec4 sharedPos[LOCAL_GROUP_SIZE_X];
 
 
@@ -71,7 +82,7 @@ int  voxelIndex( const float x, const float y, const float z ) {
 int  voxelIndex( const vec4 position ) {
 
 	// position in Voxelgrid space 
-	vec4 scaledPosition = (position - vec4( g_modelTranslation, 0.0) ) / vec4((g_maxBB - g_minBB),1) + 0.5;
+	vec4 scaledPosition = (position - vec4( g_modelTranslation.xyz, 0.0) ) / vec4((g_maxBB.xyz - g_minBB.xyz),1) + 0.5;
 	scaledPosition *= g_gridSize; 
 	return voxelIndex( scaledPosition.x, scaledPosition.y, scaledPosition.z);
 }
@@ -81,7 +92,7 @@ int  voxelIndex( const vec4 position ) {
 void trilinearInsertDensity( const vec4 position ,  const float value){
 
 	// position in Voxelgrid space 
-	vec4 scaledPosition = (position - vec4( g_modelTranslation, 0.0) ) / vec4((g_maxBB - g_minBB),1) + 0.5;
+	vec4 scaledPosition = (position - vec4( g_modelTranslation.xyz, 0.0) ) / vec4((g_maxBB.xyz - g_minBB.xyz ),1) + 0.5;
 	scaledPosition *= g_gridSize; 
 	vec3 cellIndex = floor( scaledPosition.xyz  ); 
 
@@ -123,21 +134,69 @@ void trilinearInsertDensity( const vec4 position ,  const float value){
 void trilinearInsertVelocity( const vec4 position ,  const vec4 velocity){
 
 	// position in Voxelgrid space 
-	vec4 scaledPosition = (position - vec4( g_modelTranslation, 0.0) ) / vec4((g_maxBB - g_minBB),1) + 0.5;
+	vec4 scaledPosition = (position - vec4( g_modelTranslation.xyz, 0.0) ) / vec4((g_maxBB.xyz - g_minBB.xyz),1) + 0.5;
 	scaledPosition *= g_gridSize; 
 	vec3 cellIndex = floor( scaledPosition.xyz  ); 
 
 	vec3 delta = scaledPosition.xyz - cellIndex; 
+	// #pragma unroll
+	// for(uint i = 0; i < 3; i++ ){
+	// 	atomicAdd(g_voxelGrid[ voxelIndex(cellIndex.x, cellIndex.y, cellIndex.z ) ].velocity[i] ,  velocity[i]  * (1.0 - delta.x) * (1.0 - delta.y ) * (1.0 - delta.z)); 
+	// 	if(cellIndex.z + 1 < g_gridSize) atomicAdd(g_voxelGrid[ voxelIndex(cellIndex.x, cellIndex.y, cellIndex.z + 1 ) ].velocity[i] ,  velocity[i] * (1.0 - delta.x) * (1.0 - delta.y ) *  delta.z); 
+	// 	if(cellIndex.y + 1 < g_gridSize) atomicAdd(g_voxelGrid[ voxelIndex(cellIndex.x, cellIndex.y + 1 , cellIndex.z ) ].velocity[i] ,  velocity[i] * (1.0 - delta.x) * delta.y * (1.0 - delta.z)); 
+	// 	if(cellIndex.y + 1 < g_gridSize && cellIndex.z + 1 < g_gridSize ) atomicAdd(g_voxelGrid[ voxelIndex(cellIndex.x, cellIndex.y + 1, cellIndex.z + 1 ) ].velocity[i] ,  velocity[i]  * (1.0 - delta.x) *  delta.y *  delta.z); 
+	// 	if(cellIndex.x + 1 < g_gridSize) atomicAdd(g_voxelGrid[ voxelIndex(cellIndex.x + 1, cellIndex.y, cellIndex.z ) ].velocity[i] ,  velocity[i]  * delta.x * (1.0 - delta.y ) * (1.0 - delta.z)); 
+	// 	if(cellIndex.x + 1 < g_gridSize && cellIndex.z + 1 < g_gridSize ) atomicAdd(g_voxelGrid[ voxelIndex(cellIndex.x + 1, cellIndex.y, cellIndex.z + 1  ) ].velocity[i] ,  velocity[i]  * delta.x * (1.0 - delta.y ) * delta.z); 
+	// 	if(cellIndex.x + 1 < g_gridSize && cellIndex.y + 1 < g_gridSize ) atomicAdd(g_voxelGrid[ voxelIndex(cellIndex.x + 1, cellIndex.y + 1, cellIndex.z ) ].velocity[i] ,  velocity[i]  * delta.x * delta.y * (1.0 - delta.z)); 
+	// 	if(cellIndex.x + 1 < g_gridSize && cellIndex.y + 1 < g_gridSize && cellIndex.z + 1 < g_gridSize )atomicAdd(g_voxelGrid[ voxelIndex(cellIndex.x + 1, cellIndex.y + 1, cellIndex.z  + 1) ].velocity[i] ,  velocity[i]  *  delta.x * delta.y * delta.z); 
+	// }
 
-	for(uint i = 0; i < 3; i++ ){
-		atomicAdd(g_voxelGrid[ voxelIndex(cellIndex.x, cellIndex.y, cellIndex.z ) ].velocity[i] ,  velocity[i]  * (1.0 - delta.x) * (1.0 - delta.y ) * (1.0 - delta.z)); 
-		if(cellIndex.z + 1 < g_gridSize) atomicAdd(g_voxelGrid[ voxelIndex(cellIndex.x, cellIndex.y, cellIndex.z + 1 ) ].velocity[i] ,  velocity[i] * (1.0 - delta.x) * (1.0 - delta.y ) *  delta.z); 
-		if(cellIndex.y + 1 < g_gridSize) atomicAdd(g_voxelGrid[ voxelIndex(cellIndex.x, cellIndex.y + 1 , cellIndex.z ) ].velocity[i] ,  velocity[i] * (1.0 - delta.x) * delta.y * (1.0 - delta.z)); 
-		if(cellIndex.y + 1 < g_gridSize && cellIndex.z + 1 < g_gridSize ) atomicAdd(g_voxelGrid[ voxelIndex(cellIndex.x, cellIndex.y + 1, cellIndex.z + 1 ) ].velocity[i] ,  velocity[i]  * (1.0 - delta.x) *  delta.y *  delta.z); 
-		if(cellIndex.x + 1 < g_gridSize) atomicAdd(g_voxelGrid[ voxelIndex(cellIndex.x + 1, cellIndex.y, cellIndex.z ) ].velocity[i] ,  velocity[i]  * delta.x * (1.0 - delta.y ) * (1.0 - delta.z)); 
-		if(cellIndex.x + 1 < g_gridSize && cellIndex.z + 1 < g_gridSize ) atomicAdd(g_voxelGrid[ voxelIndex(cellIndex.x + 1, cellIndex.y, cellIndex.z + 1  ) ].velocity[i] ,  velocity[i]  * delta.x * (1.0 - delta.y ) * delta.z); 
-		if(cellIndex.x + 1 < g_gridSize && cellIndex.y + 1 < g_gridSize ) atomicAdd(g_voxelGrid[ voxelIndex(cellIndex.x + 1, cellIndex.y + 1, cellIndex.z ) ].velocity[i] ,  velocity[i]  * delta.x * delta.y * (1.0 - delta.z)); 
-		if(cellIndex.x + 1 < g_gridSize && cellIndex.y + 1 < g_gridSize && cellIndex.z + 1 < g_gridSize )atomicAdd(g_voxelGrid[ voxelIndex(cellIndex.x + 1, cellIndex.y + 1, cellIndex.z  + 1) ].velocity[i] ,  velocity[i]  *  delta.x * delta.y * delta.z); 
+	atomicAdd(g_voxelGrid[ voxelIndex(cellIndex.x, cellIndex.y, cellIndex.z ) ].velocity.x ,  velocity.x  * (1.0 - delta.x) * (1.0 - delta.y ) * (1.0 - delta.z)); 
+	atomicAdd(g_voxelGrid[ voxelIndex(cellIndex.x, cellIndex.y, cellIndex.z ) ].velocity.y ,  velocity.y  * (1.0 - delta.x) * (1.0 - delta.y ) * (1.0 - delta.z)); 
+	atomicAdd(g_voxelGrid[ voxelIndex(cellIndex.x, cellIndex.y, cellIndex.z ) ].velocity.z ,  velocity.z  * (1.0 - delta.x) * (1.0 - delta.y ) * (1.0 - delta.z)); 
+	
+	if(cellIndex.z + 1 < g_gridSize){
+
+		atomicAdd(g_voxelGrid[ voxelIndex(cellIndex.x, cellIndex.y, cellIndex.z + 1 ) ].velocity.x ,  velocity.y * (1.0 - delta.x) * (1.0 - delta.y ) *  delta.z); 
+		atomicAdd(g_voxelGrid[ voxelIndex(cellIndex.x, cellIndex.y, cellIndex.z + 1 ) ].velocity.y ,  velocity.y * (1.0 - delta.x) * (1.0 - delta.y ) *  delta.z); 
+		atomicAdd(g_voxelGrid[ voxelIndex(cellIndex.x, cellIndex.y, cellIndex.z + 1 ) ].velocity.z ,  velocity.z * (1.0 - delta.x) * (1.0 - delta.y ) *  delta.z); 
+	}
+
+
+	if(cellIndex.y + 1 < g_gridSize){
+	 	atomicAdd(g_voxelGrid[ voxelIndex(cellIndex.x, cellIndex.y + 1 , cellIndex.z ) ].velocity.x ,  velocity.x * (1.0 - delta.x) * delta.y * (1.0 - delta.z)); 
+	 	atomicAdd(g_voxelGrid[ voxelIndex(cellIndex.x, cellIndex.y + 1 , cellIndex.z ) ].velocity.y ,  velocity.y * (1.0 - delta.x) * delta.y * (1.0 - delta.z)); 
+	 	atomicAdd(g_voxelGrid[ voxelIndex(cellIndex.x, cellIndex.y + 1 , cellIndex.z ) ].velocity.z ,  velocity.z * (1.0 - delta.x) * delta.y * (1.0 - delta.z)); 
+	}
+
+
+	if(cellIndex.y + 1 < g_gridSize && cellIndex.z + 1 < g_gridSize ){
+		atomicAdd(g_voxelGrid[ voxelIndex(cellIndex.x, cellIndex.y + 1, cellIndex.z + 1 ) ].velocity.x ,  velocity.x  * (1.0 - delta.x) *  delta.y *  delta.z); 
+		atomicAdd(g_voxelGrid[ voxelIndex(cellIndex.x, cellIndex.y + 1, cellIndex.z + 1 ) ].velocity.y ,  velocity.y  * (1.0 - delta.x) *  delta.y *  delta.z); 
+		atomicAdd(g_voxelGrid[ voxelIndex(cellIndex.x, cellIndex.y + 1, cellIndex.z + 1 ) ].velocity.z ,  velocity.z  * (1.0 - delta.x) *  delta.y *  delta.z); 
+	}
+	
+	if(cellIndex.x + 1 < g_gridSize){
+		atomicAdd(g_voxelGrid[ voxelIndex(cellIndex.x + 1, cellIndex.y, cellIndex.z ) ].velocity.x ,  velocity.x  * delta.x * (1.0 - delta.y ) * (1.0 - delta.z)); 
+		atomicAdd(g_voxelGrid[ voxelIndex(cellIndex.x + 1, cellIndex.y, cellIndex.z ) ].velocity.y ,  velocity.y  * delta.x * (1.0 - delta.y ) * (1.0 - delta.z)); 
+		atomicAdd(g_voxelGrid[ voxelIndex(cellIndex.x + 1, cellIndex.y, cellIndex.z ) ].velocity.z ,  velocity.z  * delta.x * (1.0 - delta.y ) * (1.0 - delta.z)); 
+	}
+	
+	if(cellIndex.x + 1 < g_gridSize && cellIndex.z + 1 < g_gridSize ){
+		atomicAdd(g_voxelGrid[ voxelIndex(cellIndex.x + 1, cellIndex.y, cellIndex.z + 1  ) ].velocity.x ,  velocity.x  * delta.x * (1.0 - delta.y ) * delta.z); 
+		atomicAdd(g_voxelGrid[ voxelIndex(cellIndex.x + 1, cellIndex.y, cellIndex.z + 1  ) ].velocity.y ,  velocity.y  * delta.x * (1.0 - delta.y ) * delta.z); 
+		atomicAdd(g_voxelGrid[ voxelIndex(cellIndex.x + 1, cellIndex.y, cellIndex.z + 1  ) ].velocity.z ,  velocity.z  * delta.x * (1.0 - delta.y ) * delta.z); 
+	}
+	
+	if(cellIndex.x + 1 < g_gridSize && cellIndex.y + 1 < g_gridSize ){
+		atomicAdd(g_voxelGrid[ voxelIndex(cellIndex.x + 1, cellIndex.y + 1, cellIndex.z ) ].velocity.x ,  velocity.x  * delta.x * delta.y * (1.0 - delta.z)); 
+		atomicAdd(g_voxelGrid[ voxelIndex(cellIndex.x + 1, cellIndex.y + 1, cellIndex.z ) ].velocity.y ,  velocity.y  * delta.x * delta.y * (1.0 - delta.z)); 
+		atomicAdd(g_voxelGrid[ voxelIndex(cellIndex.x + 1, cellIndex.y + 1, cellIndex.z ) ].velocity.z ,  velocity.z  * delta.x * delta.y * (1.0 - delta.z)); 
+	}
+	if(cellIndex.x + 1 < g_gridSize && cellIndex.y + 1 < g_gridSize && cellIndex.z + 1 < g_gridSize ){
+		atomicAdd(g_voxelGrid[ voxelIndex(cellIndex.x + 1, cellIndex.y + 1, cellIndex.z  + 1) ].velocity.x ,  velocity.x  *  delta.x * delta.y * delta.z); 
+		atomicAdd(g_voxelGrid[ voxelIndex(cellIndex.x + 1, cellIndex.y + 1, cellIndex.z  + 1) ].velocity.y ,  velocity.y  *  delta.x * delta.y * delta.z); 
+		atomicAdd(g_voxelGrid[ voxelIndex(cellIndex.x + 1, cellIndex.y + 1, cellIndex.z  + 1) ].velocity.z ,  velocity.z  *  delta.x * delta.y * delta.z); 
 	}
 
 }
@@ -145,7 +204,7 @@ void trilinearInsertVelocity( const vec4 position ,  const vec4 velocity){
 void insertVelocity( const vec4 position ,  const vec4 velocity){
 
 	// position in Voxelgrid space 
-	vec4 scaledPosition = (position - vec4( g_modelTranslation, 0.0) ) / vec4((g_maxBB - g_minBB),1) + 0.5;
+	vec4 scaledPosition = (position - vec4( g_modelTranslation.xyz, 0.0) ) / vec4((g_maxBB.xyz - g_minBB.xyz),1) + 0.5;
 	scaledPosition *= g_gridSize; 
 	vec3 cellIndex = floor( scaledPosition.xyz  ); 
 
@@ -158,7 +217,7 @@ void insertVelocity( const vec4 position ,  const vec4 velocity){
 void insertDensity( const vec4 position ,   const float value){
 
 	// position in Voxelgrid space 
-	vec4 scaledPosition = (position - vec4( g_modelTranslation, 0.0) ) / vec4((g_maxBB - g_minBB),1) + 0.5;
+	vec4 scaledPosition = (position - vec4( g_modelTranslation.xyz, 0.0) ) / vec4((g_maxBB.xyz - g_minBB.xyz),1) + 0.5;
 	scaledPosition *= g_gridSize; 
 	vec3 cellIndex = floor( scaledPosition.xyz  ); 
 
@@ -170,9 +229,7 @@ void insertDensity( const vec4 position ,   const float value){
 
 void main(){
 	
-	//uint localStrandIndex, localVertexIndex, globalStrandIndex, vertexIndexInStrand; 
-	//calculateIndices( localVertexIndex, localStrandIndex, globalStrandIndex,vertexIndexInStrand, g_numVerticesPerStrand,g_numStrandsPerThreadGroup );
-	
+
 	const vec4 position =  g_particles[gl_GlobalInvocationID.x].pos;
 	const vec4 velocity =  g_particles[gl_GlobalInvocationID.x].vel;
 

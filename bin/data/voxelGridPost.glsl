@@ -3,6 +3,13 @@
 #define LOCAL_GROUP_SIZE 8
 
 
+#define SIMULATION_DATA_BINDING 0 
+#define CONST_SIMULATION_DATA_BINDING 1
+#define MODEL_DATA_BINDING 2
+#define VOXEL_GRID_DATA_BINDING 3 
+#define CONST_VOXEL_GRID_DATA_BINDING 4
+
+
 struct Voxel{
 	vec4 velocity; 
 	vec4 gradient; 
@@ -15,8 +22,12 @@ layout(std140, binding=1) buffer voxel{
 };
 
 
-uniform int g_gridSize;
+layout( std140, binding = CONST_VOXEL_GRID_DATA_BINDING ) uniform ConstVoxelGridData{
+	vec4 g_minBB;
+	vec4 g_maxBB; 	
+	int g_gridSize;
 
+};
 
 layout(local_size_x = LOCAL_GROUP_SIZE, local_size_y = LOCAL_GROUP_SIZE, local_size_z = LOCAL_GROUP_SIZE) in;
 
