@@ -37,11 +37,7 @@ void ofApp::reloadShaders(){
 	mComputeShader.printSubroutineNames(GL_COMPUTE_SHADER);
 	mComputeShader.printSubroutineUniforms(GL_COMPUTE_SHADER);
 
-	mComputeShader.setUniform3f("g_gravityForce", ofVec3f(0,-10,0));
-	mComputeShader.setUniform1i("g_numVerticesPerStrand",NUM_HAIR_PARTICLES);
-	mComputeShader.setUniform1i("g_numStrandsPerThreadGroup", mNumHairs * mNumHairs / WORK_GROUP_SIZE);
-	mComputeShader.setUniform1f("g_strandLength",HAIR_LENGTH);
-
+	
 	mHairshader.setupShaderFromFile( GL_VERTEX_SHADER, "basic_VS.glsl");
 	mHairshader.setupShaderFromFile( GL_FRAGMENT_SHADER, "basic_FS.glsl");
 	mHairshader.linkProgram();
@@ -105,7 +101,7 @@ void ofApp::updateUBO( float deltaTime ){
 	if(	!uboInit ){
 		mConstSimulationData.gravityForce = ofVec4f(0,-10,0,0);
 		mConstSimulationData.numVerticesPerStrand = NUM_HAIR_PARTICLES;
-		mConstSimulationData.numVerticesPerThreadGroup =  mNumHairs * mNumHairs / WORK_GROUP_SIZE;
+		mConstSimulationData.numStrandsPerThreadGroup =   WORK_GROUP_SIZE / NUM_HAIR_PARTICLES;
 		mConstSimulationData.strandLength = HAIR_LENGTH;
 
 		mConstVoxelGridData.minBB = mSimulationBoundingBox.min;
@@ -265,6 +261,7 @@ void ofApp::update(){
 	createVoxelGrid( timeStep ); // create the voxel grid 
 
 
+	pushGlDebugGroup( "Hair Simulation" );
 	mComputeShader.begin();
 	
 	particlesBuffer.bindBase(GL_SHADER_STORAGE_BUFFER, 0);
@@ -289,6 +286,8 @@ void ofApp::update(){
 
 	mComputeShader.end();
 
+	popGlDebugGroup();
+
 }
 
 //--------------------------------------------------------------
@@ -301,6 +300,7 @@ void ofApp::draw(){
 
 	if( mDrawFur ){
 
+		pushGlDebugGroup( "Draw Hair" );
 		glPointSize(1);
 	
 		mHairshader.begin();
@@ -314,6 +314,8 @@ void ofApp::draw(){
 		ofMultViewMatrix(mModelAnimation);
 		mFurryMesh.draw();
 		ofPopMatrix();
+
+		popGlDebugGroup();
 
 	}
 	
@@ -380,6 +382,9 @@ void ofApp::createVoxelGrid(float timeStep){
 
 	// clear buffer to write the new values 
 	const GLfloat zero = 0;
+	
+	
+	
 	mVoxelBuffer.bind(GL_SHADER_STORAGE_BUFFER);
 	glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_R32F, GL_RED, GL_FLOAT, &zero );		
 	mVoxelBuffer.unbind(GL_SHADER_STORAGE_BUFFER);
@@ -392,6 +397,8 @@ void ofApp::createVoxelGrid(float timeStep){
 	glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_R32F, GL_RED, GL_FLOAT, &zero );		
 	mDensityBuffer2.unbind(GL_SHADER_STORAGE_BUFFER);*/
 
+	pushGlDebugGroup( "Fill Voxel Grid" ); 
+	
 	particlesBuffer.bindBase(GL_SHADER_STORAGE_BUFFER, 0);
 	mVoxelBuffer.bindBase(GL_SHADER_STORAGE_BUFFER,1);
 	//mDensityBuffer1.bindBase( GL_SHADER_STORAGE_BUFFER,2);
@@ -415,7 +422,9 @@ void ofApp::createVoxelGrid(float timeStep){
 	mVoxelBuffer.unbindBase(GL_SHADER_STORAGE_BUFFER,1);
 	//mDensityBuffer1.unbindBase( GL_SHADER_STORAGE_BUFFER,2);
 
-
+	popGlDebugGroup();
+		
+	pushGlDebugGroup( "Post-Proess Voxel Grid" ); 
 
 	//TODO filter density grid!!
 	
@@ -439,6 +448,9 @@ void ofApp::createVoxelGrid(float timeStep){
 	
 	particlesBuffer.unbindBase(GL_SHADER_STORAGE_BUFFER,0); 
 	mVoxelBuffer.unbindBase(GL_SHADER_STORAGE_BUFFER,1);
+
+
+	popGlDebugGroup();
 }
 
 
@@ -531,4 +543,24 @@ void ofApp::gotMessage(ofMessage msg){
 //--------------------------------------------------------------
 void ofApp::dragEvent(ofDragInfo dragInfo){ 
 
+}
+
+
+void ofApp::pushGlDebugGroup( std::string message ){
+
+	int maxLenght; 
+	glGetIntegerv(GL_MAX_DEBUG_MESSAGE_LENGTH, &maxLenght );
+
+	if( message.size() > maxLenght ){
+		ofLogVerbose("OpenGl debug message toolong"); 
+	}else{
+	
+		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, NULL , message.size() , message.data() );
+	}
+
+}
+
+void ofApp::popGlDebugGroup(){
+
+	glPopDebugGroup();
 }

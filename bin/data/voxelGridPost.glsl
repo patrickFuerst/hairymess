@@ -91,12 +91,12 @@ void main(){
 
 	// calculate gradient 
 	const vec3 gradient  = centralDifference();
-	//const float len = length(gradient); 
+	const float len = length(gradient); 
 
-	//if( len > 0.0)
+	if( len > 0.0)
 		g_voxelGrid[voxelIndex].gradient.xyz = normalize(gradient); // normalized gradient
-	//else
-	//g_voxelGrid[voxelIndex].gradient = vec4(0);
+	else
+	g_voxelGrid[voxelIndex].gradient = vec4(0);
 }
 
 

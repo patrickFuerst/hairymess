@@ -41,6 +41,11 @@ class ofApp : public ofBaseApp{
 
 		void algorithmChanged(const void* sender);
 
+		// debug helpers
+
+		void pushGlDebugGroup( std::string message );
+		void popGlDebugGroup();
+
 
 		/// Shader Storgae Buffers
 		struct Particle{
@@ -76,7 +81,7 @@ class ofApp : public ofBaseApp{
 		struct ConstSimulationData{
 			ofVec4f gravityForce;
 			int numVerticesPerStrand; 
-			int numVerticesPerThreadGroup;
+			int numStrandsPerThreadGroup;
 			float strandLength;	
 		
 		}mConstSimulationData;
