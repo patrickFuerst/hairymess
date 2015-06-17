@@ -196,7 +196,8 @@ void main(){
 
 	// repulsion
 	const vec4 gridGradient = trilinearGradientInterpolation(oldPosition) ;
-	velocity = velocity + g_repulsion * vec4(gridGradient.xyz,0.0)/g_timeStep;
+	//velocity = velocity + g_repulsion * vec4(gridGradient.xyz,0.0)/g_timeStep; // this one for normalize gradient 
+	velocity = velocity + g_repulsion * vec4(gridGradient.xyz,0.0) * g_timeStep; // this one for non normalize gradient
 
 	simulationAlgorithm(localStrandIndex, localVertexIndex, globalStrandIndex, vertexIndexInStrand, oldPosition, prevPosition, velocity, color, force);
 	

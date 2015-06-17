@@ -61,6 +61,7 @@ const vec3 centralDifference(){
 	if (y < 1 || y >= g_gridSize - 1) return vec3(0); 
 	if (z < 1 || z >= g_gridSize - 1) return vec3(0); 
 
+	// use trilinearinterpolation for getDensity, could also be an approach
 	const float x1 = getDensityX( x +1 );
 	const float x2 = getDensityX( x -1 );
 
@@ -94,9 +95,10 @@ void main(){
 	const float len = length(gradient); 
 
 	if( len > 0.0)
-		g_voxelGrid[voxelIndex].gradient.xyz = normalize(gradient); // normalized gradient
+		//g_voxelGrid[voxelIndex].gradient.xyz = normalize(gradient); // normalized gradient
+		g_voxelGrid[voxelIndex].gradient.xyz = gradient; // not normalized gradient
 	else
-	g_voxelGrid[voxelIndex].gradient = vec4(0);
+		g_voxelGrid[voxelIndex].gradient = vec4(0);
 }
 
 
