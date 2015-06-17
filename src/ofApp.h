@@ -19,11 +19,7 @@ class ofApp : public ofBaseApp{
 		void draw();
 		void exit();
 
-		void dirAsColorChanged(bool & dirAsColor);
-
-		void reloadShaders();
-		void updateUBO( float deltaTime);
-
+		
 		void keyPressed(int key);
 		void keyReleased(int key);
 		void mouseMoved(int x, int y );
@@ -34,11 +30,14 @@ class ofApp : public ofBaseApp{
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
 		
-
+		// hair stuff
 		void createVoxelGrid( float timeStep);
 		AABB calculateBoundingBox( ofMesh &mesh, float hairlength  );
+		void reloadShaders();
+		void updateUBO( float deltaTime);
 
-
+		// gui 
+		void createGui(); 
 		void algorithmChanged(const void* sender);
 
 		// debug helpers
@@ -48,6 +47,9 @@ class ofApp : public ofBaseApp{
 		
 		void drawDebug();
 		void drawInfo();
+
+
+
 
 		/// Shader Storgae Buffers
 		struct Particle{

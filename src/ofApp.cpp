@@ -216,31 +216,7 @@ void ofApp::setup(){
 	ofBackground(0);
 	ofEnableBlendMode(OF_BLENDMODE_ADD);
 
-	gui.setup();
-	mShaderUniforms.setName("shader params");
-	mShaderUniforms.add( mVelocityDamping.set("velocityDamping", 0.5f, 0,1));
-	mShaderUniforms.add( mNumConstraintIterations.set("numIterations", 25, 0,200));
-	mShaderUniforms.add( mStiffness.set("stiffness",1.0f, 0,1));
-	mShaderUniforms.add( mFriction.set("friction",0.1f, 0,1.0));
-	mShaderUniforms.add( mRepulsion.set("repulsion",0.1f, 0,1.0));
-	mShaderUniforms.add( mFTLDistanceDamping.set("ftlDamping", 1.0,0.0,1.0));
-	mSimulationAlgorithms.setName( "shader algorithms");
-	
-	mPBDAlgorithm.setup( "PBD Algorithm");
-	mDFTLAlgorithm.setup( "DFTL Algorithm" );
-	mPBDAlgorithm.addListener( this, &ofApp::algorithmChanged );
-	mDFTLAlgorithm.addListener( this, &ofApp::algorithmChanged );
-	mDrawBoundingBox.setName("Draw BoundingBox");
-	mDrawVoxelGrid.setName("Draw VoxelGrid");
-	mDrawFur.setName( "Draw Fur" ); 
-
-	gui.add( &mPBDAlgorithm);
-	gui.add( &mDFTLAlgorithm);
-	gui.add( mDrawBoundingBox );
-	gui.add( mDrawVoxelGrid );
-	gui.add( mDrawFur );
-	gui.add( mShaderUniforms);
-
+	createGui();
 
 	mSimulationBoundingBox = calculateBoundingBox( mFurryMesh, HAIR_LENGTH ); 
 	mDrawBoundingBox = false; 
@@ -407,6 +383,36 @@ void ofApp::algorithmChanged(const void* sender ) {
 }
 
 
+void ofApp::createGui(){
+
+	gui.setup();
+	mShaderUniforms.setName("shader params");
+	mShaderUniforms.add( mVelocityDamping.set("velocityDamping", 0.5f, 0,1));
+	mShaderUniforms.add( mNumConstraintIterations.set("numIterations", 25, 0,200));
+	mShaderUniforms.add( mStiffness.set("stiffness",1.0f, 0,1));
+	mShaderUniforms.add( mFriction.set("friction",0.1f, 0,1.0));
+	mShaderUniforms.add( mRepulsion.set("repulsion",0.1f, 0,50.0));
+	mShaderUniforms.add( mFTLDistanceDamping.set("ftlDamping", 1.0,0.0,1.0));
+	mSimulationAlgorithms.setName( "shader algorithms");
+	
+	mPBDAlgorithm.setup( "PBD Algorithm");
+	mDFTLAlgorithm.setup( "DFTL Algorithm" );
+	mPBDAlgorithm.addListener( this, &ofApp::algorithmChanged );
+	mDFTLAlgorithm.addListener( this, &ofApp::algorithmChanged );
+	mDrawBoundingBox.setName("Draw BoundingBox");
+	mDrawVoxelGrid.setName("Draw VoxelGrid");
+	mDrawFur.setName( "Draw Fur" ); 
+
+	gui.add( &mPBDAlgorithm);
+	gui.add( &mDFTLAlgorithm);
+	gui.add( mDrawBoundingBox );
+	gui.add( mDrawVoxelGrid );
+	gui.add( mDrawFur );
+	gui.add( mShaderUniforms);
+
+
+
+}
 void ofApp::createVoxelGrid(float timeStep){
 
 
