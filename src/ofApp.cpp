@@ -135,19 +135,25 @@ void ofApp::setup(){
 	
 	mReloadShaders = true; 
 	ofSetLogLevel( OF_LOG_VERBOSE);
-	//ofSetVerticalSync(false);
+	ofSetVerticalSync(false);
 	camera.setAutoDistance(false);
 	camera.setupPerspective(false,60,0.1,1000);
 	camera.setPosition(10,15,10);
 	camera.lookAt(ofVec3f(0,0,0));
 	
-	mFurryMesh = ofMesh::sphere(4,200 ); 
-	mNumHairs = mFurryMesh.getNumVertices();
-	particles.resize( mNumHairs * NUM_HAIR_PARTICLES);
+	mFurryMesh = ofMesh::sphere(4,50 ); 
+	mNumHairStands = mFurryMesh.getNumVertices();
+	mNumParticles = mNumHairStands * NUM_HAIR_PARTICLES;
+	particles.resize(mNumParticles);
 
-	mNumWorkGroups = ((mNumHairs*NUM_HAIR_PARTICLES + (WORK_GROUP_SIZE-1))/ WORK_GROUP_SIZE);
+	mNumWorkGroups = (( mNumParticles + (WORK_GROUP_SIZE-1))/ WORK_GROUP_SIZE);
 	
-		int index = 0;
+	std::vector<ofIndexType> indices; // create indices for line strips, including restart index 
+	indices.resize( mNumParticles + mNumHairStands ); // we need storage for an indices for every particle, plus the restart index after each hair strand
+	int restartIndex = std::numeric_limits<ofIndexType>::max();
+
+	int index = 0; 
+	int index2 = 0;
 	for (int i = 0; i <  mFurryMesh.getNumVertices(); i++)
 	{
 
@@ -155,6 +161,9 @@ void ofApp::setup(){
 		ofVec3f n = mFurryMesh.getNormal(i);
 		for (int j = 0; j < NUM_HAIR_PARTICLES; j++)
 		{
+
+			indices.at(index2) = index;  
+
 			auto& p = particles.at(index);
 			p.pos = v + j* n * HAIR_LENGTH / NUM_HAIR_PARTICLES;
 			p.pos.w = 1.0; 
@@ -163,18 +172,30 @@ void ofApp::setup(){
 			p.color.set( ofColor::goldenRod);
 			p.fixed = j == 0 ? true : false;
 			index++;
+			index2++;
 		}
+
+		indices.at(index2) = restartIndex;  
+		index2++;
+
 
 	}
 	
+
+
 	mModelAnimation.makeIdentityMatrix();
 
 	// PARTICLE BUFFER
 	particlesBuffer.allocate(particles,GL_DYNAMIC_DRAW);
 	particlesBuffer.bindBase(GL_SHADER_STORAGE_BUFFER, 0);
-	vbo.setVertexBuffer(particlesBuffer,4,sizeof(Particle));
-	vbo.setColorBuffer(particlesBuffer,  sizeof(Particle), offsetof(Particle, Particle::color) ); 
+	mHairVbo.setVertexBuffer(particlesBuffer,4,sizeof(Particle));
+	mHairVbo.setColorBuffer(particlesBuffer,  sizeof(Particle), offsetof(Particle, Particle::color) ); 
+	mHairVbo.setIndexData( indices.data() , indices.size() , GL_STATIC_DRAW );  
 
+	//let enable and set the right restart index 
+	glEnable(GL_PRIMITIVE_RESTART ); 
+	glPrimitiveRestartIndex( restartIndex ); 
+	glDisable(GL_PRIMITIVE_RESTART);
 
 	// VOXEL BUFFER
 
@@ -219,7 +240,6 @@ void ofApp::setup(){
 	gui.add( mDrawVoxelGrid );
 	gui.add( mDrawFur );
 	gui.add( mShaderUniforms);
-	gui.add(fps.set("fps",60,0,10000));
 
 
 	mSimulationBoundingBox = calculateBoundingBox( mFurryMesh, HAIR_LENGTH ); 
@@ -239,7 +259,6 @@ void ofApp::update(){
 	}
 	
 	
-	fps = ofGetFrameRate();
 	float timeStep = ofGetLastFrameTime();
 	if( timeStep > 0.02)  // prevent to high timesteps at the beginning of the app start
 		timeStep = 0.02;
@@ -308,7 +327,11 @@ void ofApp::draw(){
 		mHairshader.begin();
 
 		glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT); //? 
-		vbo.draw(GL_POINTS,0,particles.size());
+		//mHairVbo.draw(GL_POINTS,0,particles.size());
+		glEnable(GL_PRIMITIVE_RESTART);
+		mHairVbo.drawElements( GL_LINE_STRIP , mHairVbo.getNumIndices() ); 
+		glDisable(GL_PRIMITIVE_RESTART);
+
 
 		mHairshader.end();
 		ofSetColor(ofColor::red);
@@ -362,6 +385,11 @@ void ofApp::draw(){
 	ofEnableBlendMode(OF_BLENDMODE_ALPHA);
 	ofSetColor(255);
 	gui.draw();
+
+	drawInfo();
+	drawDebug();
+
+
 }
 
 void ofApp::algorithmChanged(const void* sender ) {
@@ -565,4 +593,37 @@ void ofApp::pushGlDebugGroup( std::string message ){
 void ofApp::popGlDebugGroup(){
 
 	glPopDebugGroup();
+}
+
+
+void ofApp::drawDebug(){
+
+    ofSetColor(0, 255, 0);
+    string framerate = ofToString( ofGetFrameRate() );
+    ofDrawBitmapString( framerate, 30, 30);
+    ofSetColor(255, 255, 255);
+}
+
+void ofApp::drawInfo(){
+
+
+    string info =
+    
+    "Press Key:\n"
+    "r: reload shaders \n"
+	"Num Particles: " + std::to_string(mNumParticles) + "\n"
+	"Num Hairstrands: " + std::to_string(mNumHairStands) + "\n"
+    "\n"
+     "///////  ///////     Furry Ball \n"
+     "//   //  //          patrickfuerst.at \n"
+     "//////   //// \n"
+     "//       // \n"
+     "//       // ";
+    
+    ofSetColor(0, 255, 0);
+    ofDrawBitmapString( info, 30, ofGetWindowHeight() - 150);
+    ofSetColor(255, 255, 255);
+
+
+
 }

@@ -45,7 +45,9 @@ class ofApp : public ofBaseApp{
 
 		void pushGlDebugGroup( std::string message );
 		void popGlDebugGroup();
-
+		
+		void drawDebug();
+		void drawInfo();
 
 		/// Shader Storgae Buffers
 		struct Particle{
@@ -138,7 +140,7 @@ class ofApp : public ofBaseApp{
 		ofBufferObject particlesBuffer, mVoxelBuffer, mDensityBuffer1, mDensityBuffer2; 
 
 		ofMesh mFurryMesh;
-		int mNumHairs; 
+		int mNumHairStands,  mNumParticles; ; 
 		AABB mSimulationBoundingBox; 
 
 		ofMatrix4x4 mModelAnimation, mModelAnimationPrevInversed;
@@ -147,7 +149,7 @@ class ofApp : public ofBaseApp{
 		GLuint vaoID;
 		ofEasyCam camera;
 		//ofCamera camera;
-		ofVbo vbo;
+		ofVbo mHairVbo;
 
 		
 		ofxPanel gui;
@@ -161,7 +163,6 @@ class ofApp : public ofBaseApp{
 
 		// dynamic follow the leader constraint 
 		ofParameter<float> mFTLDistanceDamping;
-		ofParameter<float> fps;
 
 		GLuint subroutineUniforms[1];
 
@@ -170,5 +171,6 @@ class ofApp : public ofBaseApp{
 		ofParameter<bool> mDrawBoundingBox; 
 		ofParameter<bool> mDrawVoxelGrid; 
 		ofParameter<bool> mDrawFur; 
+
 
 };
