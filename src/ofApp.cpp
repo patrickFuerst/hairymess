@@ -159,6 +159,9 @@ void ofApp::setup(){
 
 		ofVec3f v = mFurryMesh.getVertex(i);
 		ofVec3f n = mFurryMesh.getNormal(i);
+		
+		float deltaMass = 0.9; 
+		float mass  = 1.0 - deltaMass/2.0 + ofRandom(deltaMass); // each strand get a slightly different mass 
 		for (int j = 0; j < NUM_HAIR_PARTICLES; j++)
 		{
 
@@ -170,6 +173,7 @@ void ofApp::setup(){
 			p.prevPos = p.pos;
 			p.vel.set(0,0,0,0);
 			p.color.set( ofColor::goldenRod);
+			p.mass = mass;  
 			p.fixed = j == 0 ? true : false;
 			index++;
 			index2++;
@@ -240,16 +244,16 @@ void ofApp::update(){
 		timeStep = 0.02;
 
 
-	ofMatrix4x4 modelAnimationMatrixDelta = mModelAnimation * mModelAnimationPrevInversed;
-	mModelAnimationPrevInversed = mModelAnimation.getInverse();
+	//ofMatrix4x4 modelAnimationMatrixDelta = mModelAnimation * mModelAnimationPrevInversed;
+	//mModelAnimationPrevInversed = mModelAnimation.getInverse();
 
-	static ofQuaternion first, second; 
-	first.makeRotate(0,0,0,0);
-	second.makeRotate(180,1,1,0);
-	mModelOrientation.slerp( sin(0.2f* ofGetElapsedTimef()), first, second);
-	mModelAnimation.makeIdentityMatrix();
-	mModelAnimation.postMultRotate(mModelOrientation);
-	mModelAnimation.setTranslation( ofVec3f( 0,5.0f*abs( sin( ofGetElapsedTimef() ) ), 0));
+	//static ofQuaternion first, second; 
+	//first.makeRotate(0,0,0,0);
+	//second.makeRotate(180,1,1,0);
+	//mModelOrientation.slerp( sin(0.2f* ofGetElapsedTimef()), first, second);
+	//mModelAnimation.makeIdentityMatrix();
+	//mModelAnimation.postMultRotate(mModelOrientation);
+	//mModelAnimation.setTranslation( ofVec3f( 0,5.0f*abs( sin( ofGetElapsedTimef() ) ), 0));
 
 
 	updateUBO( timeStep ); 

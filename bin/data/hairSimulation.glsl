@@ -15,6 +15,7 @@ struct Particle{
 	vec4 prevPos;
 	vec4 vel;
 	vec4 color;
+	float mass;
 	bool fix;
 };
 
@@ -71,6 +72,7 @@ layout( std140, binding = CONST_VOXEL_GRID_DATA_BINDING ) uniform ConstVoxelGrid
 
 shared vec4 sharedPos[LOCAL_GROUP_SIZE_X];
 shared bool sharedFixed[LOCAL_GROUP_SIZE_X];
+shared float sharedMass[LOCAL_GROUP_SIZE_X];
 
 subroutine void hairSimulationAlgorithm( const uint localStrandIndex,
 	const uint localVertexIndex,
@@ -80,7 +82,8 @@ subroutine void hairSimulationAlgorithm( const uint localStrandIndex,
 	const vec4 prevPosition,
 	const vec4 velocity,
 	const vec4 color,
-	const vec4 force
+	const vec4 force,
+	const float mass
 	);
 
 
@@ -180,10 +183,13 @@ void main(){
 	
 	const vec4 oldPosition = sharedPos[localVertexIndex] =  p[gl_GlobalInvocationID.x].pos;
 	const vec4 prevPosition =   p[gl_GlobalInvocationID.x].prevPos;
-	vec4 velocity =   p[gl_GlobalInvocationID.x].vel;
 	const vec4 color = p[gl_GlobalInvocationID.x].color;
+	const float mass = p[gl_GlobalInvocationID.x].mass;
+
+	vec4 velocity =   p[gl_GlobalInvocationID.x].vel;
 
 	sharedFixed[localVertexIndex] = p[gl_GlobalInvocationID.x].fix;
+	sharedMass[localVertexIndex] = p[gl_GlobalInvocationID.x].mass;
 
 	vec4 force = g_gravityForce;
 	const int voxelIndex = voxelIndex( oldPosition ); 
@@ -199,7 +205,7 @@ void main(){
 	//velocity = velocity + g_repulsion * vec4(gridGradient.xyz,0.0)/g_timeStep; // this one for normalize gradient 
 	velocity = velocity + g_repulsion * vec4(gridGradient.xyz,0.0) * g_timeStep; // this one for non normalize gradient
 
-	simulationAlgorithm(localStrandIndex, localVertexIndex, globalStrandIndex, vertexIndexInStrand, oldPosition, prevPosition, velocity, color, force);
+	simulationAlgorithm(localStrandIndex, localVertexIndex, globalStrandIndex, vertexIndexInStrand, oldPosition, prevPosition, velocity, color, force, mass);
 	
 }
 

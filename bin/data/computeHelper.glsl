@@ -17,19 +17,19 @@ vec2 constrainMultiplier( bool fixed0 , bool fixed1){
 }
 
 
-vec4  applyLengthConstraintDFTL(  vec4 pos0 ,  bool fixed0,  vec4 pos1,  bool fixed1,  float targetLength, float stiffness = 1.0){
+vec4  applyLengthConstraintDFTL(  vec4 pos0 ,  bool fixed0,  vec4 pos1,  bool fixed1, float mass1, float targetLength, float stiffness = 1.0){
 
 	vec3 delta = pos1.xyz - pos0.xyz; 
 	float distance = max( length( delta ), 1e-7);
 	float stretching  = 1.0 - targetLength / distance; 
-	delta = stretching * delta; 
-	vec2 multiplier = constrainMultiplier(fixed0, fixed1);
+	delta = stretching * delta ; 
+	//vec2 multiplier = constrainMultiplier(fixed0, fixed1);
 
-	return vec4(pos1.xyz - 1.0 * delta * stiffness,1.0);
+	return vec4(pos1.xyz - delta * stiffness,1.0);
 
 }
 
-void  applyLengthConstraint( inout vec4 pos0 , in bool fixed0, inout vec4 pos1, in bool fixed1,  float targetLength, float stiffness = 1.0){
+void  applyLengthConstraint( inout vec4 pos0 , in bool fixed0, in float mass0, inout vec4 pos1, in bool fixed1, float mass1,  float targetLength, float stiffness = 1.0){
 
 	vec3 delta = pos1.xyz - pos0.xyz; 
 	float distance = max( length( delta ), 1e-7);
@@ -37,8 +37,8 @@ void  applyLengthConstraint( inout vec4 pos0 , in bool fixed0, inout vec4 pos1, 
 	delta = stretching * delta; 
 	vec2 multiplier = constrainMultiplier(fixed0, fixed1);
 
-	pos0.xyz += multiplier[0] * delta * stiffness;
-	pos1.xyz -= multiplier[1] * delta * stiffness;
+	pos0.xyz += multiplier[0] * delta * stiffness * 1.0/mass0;
+	pos1.xyz -= multiplier[1] * delta * stiffness * 1.0/mass1;
 
 }
 
@@ -59,11 +59,11 @@ void calculateIndices( inout uint localVertexIndex , inout uint localStrandIndex
 
 }
 
-vec4 positionIntegration( vec4 position, vec4 velocity, vec4 force, bool fix){
+vec4 positionIntegration( vec4 position, vec4 velocity, vec4 force, float mass,  bool fix){
 
 	if( !fix){
 
-		position.xyz +=   velocity.xyz * g_velocityDamping * g_timeStep  + force.xyz * g_timeStep * g_timeStep;
+		position.xyz +=   velocity.xyz * g_velocityDamping * g_timeStep  + force.xyz * g_timeStep * g_timeStep / mass;
 
 	}else{
 
@@ -77,11 +77,11 @@ vec4 positionIntegration( vec4 position, vec4 velocity, vec4 force, bool fix){
 }
 
 
-vec4 verletIntegration(  vec4 position , vec4 previousPosition, vec4 force,  bool fix){
+vec4 verletIntegration(  vec4 position , vec4 previousPosition, vec4 force,  float mass, bool fix){
 	//  TODO implement time correct verlet integration
 	if( !fix){
 
-		position.xyz +=   (position.xyz - previousPosition.xyz) * g_velocityDamping	  + force.xyz * g_timeStep * g_timeStep;
+		position.xyz +=   (position.xyz - previousPosition.xyz) * g_velocityDamping	  + force.xyz * g_timeStep * g_timeStep / mass;
 
 	}else{
 		// first project it back to worldspace so rotations get handled properly

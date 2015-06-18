@@ -57,8 +57,9 @@ class ofApp : public ofBaseApp{
 			ofVec4f prevPos;
 			ofVec4f vel;
 			ofFloatColor color;
+			float mass;
 			int fixed;  // actually bool in glsl
-			int pad[3];  // struct in glsl is aligned to multiple of the biggest base alingment, here 16 , so offset of next is 64 not 52
+			int pad[2];  // struct in glsl is aligned to multiple of the biggest base alingment, here 16 , so offset of next is 64 not 52
 		};
 
 		struct Voxel{

@@ -9,7 +9,8 @@ subroutine(hairSimulationAlgorithm) void DFTLApproach( const uint localStrandInd
 	const vec4 prevPosition,
 	const vec4 velocity,
 	const vec4 color,
-	const vec4 force
+	const vec4 force,
+	const float mass
 	){
 
 	
@@ -25,7 +26,7 @@ subroutine(hairSimulationAlgorithm) void DFTLApproach( const uint localStrandInd
 
 
 	// explicit euler integration 
-	sharedPos[localVertexIndex]  = positionIntegration( sharedPos[localVertexIndex], derivedVelocity, force, sharedFixed[localVertexIndex]);
+	sharedPos[localVertexIndex]  = positionIntegration( sharedPos[localVertexIndex], derivedVelocity, force, mass, sharedFixed[localVertexIndex]);
 
 	memoryBarrierShared();
  	groupMemoryBarrier();
@@ -35,7 +36,8 @@ subroutine(hairSimulationAlgorithm) void DFTLApproach( const uint localStrandInd
 
 		for(int i= 0; i < g_numVerticesPerStrand-1; i++){
 			bool fix = sharedFixed[localVertexIndex+i+1];
-			sharedPos[localVertexIndex+i+1] = applyLengthConstraintDFTL( sharedPos[localVertexIndex+i], true, sharedPos[localVertexIndex+i+1], fix, g_strandLength/g_numVerticesPerStrand, g_stiffness);			
+			float mass = sharedMass[localVertexIndex+i+1];
+			sharedPos[localVertexIndex+i+1] = applyLengthConstraintDFTL( sharedPos[localVertexIndex+i], true, sharedPos[localVertexIndex+i+1], fix, mass, g_strandLength/g_numVerticesPerStrand, g_stiffness);			
 
 		}
 
