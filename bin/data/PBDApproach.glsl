@@ -33,7 +33,7 @@ subroutine(hairSimulationAlgorithm) void PBDApproach( const uint localStrandInde
 	for(int i = 0 ; i < g_numIterations ; i++){
 		
 		if( localVertexIndex <  floor(gl_WorkGroupSize.x/2) && (index0 % g_numVerticesPerStrand) < g_numVerticesPerStrand-1){
-			applyLengthConstraint( sharedPos[index0], true, sharedPos[index1], fixed1, g_strandLength/g_numVerticesPerStrand, stiffness);
+			applyLengthConstraint( sharedPos[index0], fixed0, sharedPos[index1], fixed1, g_strandLength/g_numVerticesPerStrand, stiffness);
 
 		}
 		memoryBarrierShared();
