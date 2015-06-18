@@ -17,7 +17,6 @@ struct Particle{
 	vec4 prevPos;
 	vec4 vel;
 	vec4 color;
-	float mass;
 	bool fix;
 };
 
@@ -233,16 +232,15 @@ void main(){
 
 	const vec4 position =  g_particles[gl_GlobalInvocationID.x].pos;
 	const vec4 velocity =  g_particles[gl_GlobalInvocationID.x].vel;
-	const float mass =  g_particles[gl_GlobalInvocationID.x].mass;
 
 	// const int voxelIndex = voxelIndex( position );
 	// g_voxelGrid[voxelIndex].density = 0.5;
 
 	// TODO optimise both to one method
-	trilinearInsertDensity( position, mass ); 
+	trilinearInsertDensity( position, 1.0 ); 
 	
 	//trilinearInsertDensity2( position, 1.0 ); 
-	trilinearInsertVelocity( position , velocity * mass);
+	trilinearInsertVelocity( position , velocity);
 //	insertDensity( position , 1.0 );
 //	insertVelocity( position, velocity ); 
 

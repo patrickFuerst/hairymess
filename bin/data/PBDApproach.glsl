@@ -8,14 +8,13 @@ subroutine(hairSimulationAlgorithm) void PBDApproach( const uint localStrandInde
 	const vec4 prevPosition,
 	const vec4 velocity,
 	const vec4 color,
-	const vec4 force,
-	const float mass
+	const vec4 force
 	){
 
 
 	const vec4 oldPosition = position; 
 	//sharedPos[localVertexIndex]  = verletIntegration( sharedPos[localVertexIndex], prevPosition, force, sharedFixed[localVertexIndex]);
-	sharedPos[localVertexIndex]  = positionIntegration( oldPosition , velocity, force, mass,  sharedFixed[localVertexIndex]);
+	sharedPos[localVertexIndex]  = positionIntegration( oldPosition , velocity, force, sharedFixed[localVertexIndex]);
 
 
 	const uint index0 = localVertexIndex*2;
@@ -24,9 +23,6 @@ subroutine(hairSimulationAlgorithm) void PBDApproach( const uint localStrandInde
 	const bool fixed0 = sharedFixed[index0];
 	const bool fixed1 = sharedFixed[index1];
 	const bool fixed2 = sharedFixed[index2];
-	const float mass0 = sharedMass[index0];
-	const float mass1 = sharedMass[index1];
-	const float mass2 = sharedMass[index2];
 
 	memoryBarrierShared();
 	barrier();
@@ -37,12 +33,12 @@ subroutine(hairSimulationAlgorithm) void PBDApproach( const uint localStrandInde
 	for(int i = 0 ; i < g_numIterations ; i++){
 		
 		if( localVertexIndex <  floor(gl_WorkGroupSize.x/2) && (index0 % g_numVerticesPerStrand) < g_numVerticesPerStrand-1){
-			applyLengthConstraint( sharedPos[index0], fixed0, mass0, sharedPos[index1], fixed1, mass1,  g_strandLength/g_numVerticesPerStrand, stiffness);
+			applyLengthConstraint( sharedPos[index0], true, sharedPos[index1], fixed1, g_strandLength/g_numVerticesPerStrand, stiffness);
 
 		}
 		memoryBarrierShared();
 		if( (index1 % g_numVerticesPerStrand) < g_numVerticesPerStrand -1){
-			applyLengthConstraint( sharedPos[index1], fixed1, mass1, sharedPos[index2], fixed2, mass2, g_strandLength/g_numVerticesPerStrand, stiffness);			
+			applyLengthConstraint( sharedPos[index1], fixed1, sharedPos[index2], fixed2, g_strandLength/g_numVerticesPerStrand, stiffness);			
 		}
 		memoryBarrierShared();
 
