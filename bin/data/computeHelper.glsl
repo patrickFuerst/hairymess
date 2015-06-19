@@ -43,6 +43,50 @@ void  applyLengthConstraint( inout vec4 pos0 , in bool fixed0, inout vec4 pos1, 
 }
 
 
+bool calculateSphereCollision( vec4 prevPosition, vec4 position, vec4 sphere, inout vec3 collisionPoint , inout vec3 normal ){
+
+
+	const vec3 spherePosition = sphere.xyz; 
+	const float radius = sphere.w;
+	
+	const vec3 collisionRay =  position.xyz - prevPosition.xyz;
+	const vec3 ppS = spherePosition - prevPosition.xyz; // previousPosition to sphere position ray
+	const vec3 pS = spherePosition - position.xyz;
+	
+	// first check if the new point lies within the sphere 
+	if(  length(pS) < radius  ){
+
+		//invarient: intersection sphere 
+
+		// // calculate ray->sphere collision point 
+
+		// // project sphere position onto the collision ray 
+		// const vec3 pSpherePosition = prevPosition.xyz +  dot(collisionRay , ppS ) / length(collisionRay) * collisionRay;
+
+		// // pythagoras to get the distance from pSpherePosition to the collision point
+		// float dist = sqrt( radius * radius  - pow(length( pSpherePosition - spherePosition ),2)  );
+		// // calculate the final position with the previous one and  dist
+		// collisionPoint = pSpherePosition -  normalize(collisionRay) * dist; 
+
+		// normal = normalize( collisionPoint - spherePosition); 
+
+
+		// not correct easy approach
+		normal = normalize( position.xyz - spherePosition); 
+		collisionPoint = spherePosition + radius * normal; 
+
+
+
+		return true; 
+
+	}
+
+
+	return false; 
+
+
+}
+
 
 void calculateIndices( inout uint localVertexIndex , inout uint localStrandIndex ,
 					 inout uint globalStrandIndex , inout uint vertexIndexInStrand,  uint numVerticesPerStrand, 

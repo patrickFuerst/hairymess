@@ -3,7 +3,7 @@
 
 
 #define NUM_HAIR_PARTICLES 16   // number must not be bigger then WORK_GROUP_SIZE , current 32 max, because glsl for loop limited
-#define HAIR_LENGTH 1.0f
+#define HAIR_LENGTH 2.0f
 
 
 #define WORK_GROUP_SIZE 64
@@ -99,7 +99,7 @@ void ofApp::updateUBO( float deltaTime ){
 	mVoxelGridData.deltaTime = deltaTime;
 	
 	if(	!uboInit ){
-		mConstSimulationData.gravityForce = ofVec4f(0,-10,0,0);
+		mConstSimulationData.gravityForce = ofVec4f(20,-2,0,0);
 		mConstSimulationData.numVerticesPerStrand = NUM_HAIR_PARTICLES;
 		mConstSimulationData.numStrandsPerThreadGroup =   WORK_GROUP_SIZE / NUM_HAIR_PARTICLES;
 		mConstSimulationData.strandLength = HAIR_LENGTH;
@@ -153,6 +153,7 @@ void ofApp::setup(){
 
 	int index = 0; 
 	int index2 = 0;
+
 	for (int i = 0; i <  mFurryMesh.getNumVertices(); i++)
 	{
 
@@ -160,6 +161,8 @@ void ofApp::setup(){
 		ofVec3f n = mFurryMesh.getNormal(i);
 		for (int j = 0; j < NUM_HAIR_PARTICLES; j++)
 		{
+			ofFloatColor startColor = ofFloatColor::greenYellow;
+		ofFloatColor endColor = ofFloatColor::deepSkyBlue; 
 
 			indices.at(index2) = index;  
 
@@ -168,7 +171,7 @@ void ofApp::setup(){
 			p.pos.w = 1.0; 
 			p.prevPos = p.pos;
 			p.vel.set(0,0,0,0);
-			p.color.set( ofColor::goldenRod);
+			p.color.set( startColor.lerp( endColor, float(j)/ NUM_HAIR_PARTICLES ) );
 			p.fixed = j == 0 ? true : false;
 			index++;
 			index2++;
@@ -240,16 +243,16 @@ void ofApp::update(){
 		timeStep = 0.02;
 
 
-	//ofMatrix4x4 modelAnimationMatrixDelta = mModelAnimation * mModelAnimationPrevInversed;
-	//mModelAnimationPrevInversed = mModelAnimation.getInverse();
+	ofMatrix4x4 modelAnimationMatrixDelta = mModelAnimation * mModelAnimationPrevInversed;
+	mModelAnimationPrevInversed = mModelAnimation.getInverse();
 
-	//static ofQuaternion first, second; 
-	//first.makeRotate(0,0,0,0);
-	//second.makeRotate(180,1,1,0);
-	//mModelOrientation.slerp( sin(0.2f* ofGetElapsedTimef()), first, second);
-	//mModelAnimation.makeIdentityMatrix();
+	static ofQuaternion first, second; 
+	first.makeRotate(0,0,0,0);
+	second.makeRotate(180,1,1,0);
+	mModelOrientation.slerp( sin(0.2f* ofGetElapsedTimef()), first, second);
+	mModelAnimation.makeIdentityMatrix();
 	//mModelAnimation.postMultRotate(mModelOrientation);
-	//mModelAnimation.setTranslation( ofVec3f( 0,5.0f*abs( sin( ofGetElapsedTimef() ) ), 0));
+	mModelAnimation.setTranslation( ofVec3f( 0,5.0f*abs( sin( ofGetElapsedTimef() ) ), 0));
 
 
 	updateUBO( timeStep ); 
