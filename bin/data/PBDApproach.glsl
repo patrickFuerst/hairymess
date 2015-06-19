@@ -20,9 +20,7 @@ subroutine(hairSimulationAlgorithm) void PBDApproach( const uint localStrandInde
 	const uint index0 = localVertexIndex*2;
 	const uint index1 = localVertexIndex*2+1;
 	const uint index2 = localVertexIndex*2+2;
-	const bool fixed0 = sharedFixed[index0];
-	const bool fixed1 = sharedFixed[index1];
-	const bool fixed2 = sharedFixed[index2];
+
 
 	memoryBarrierShared();
 	barrier();
@@ -32,20 +30,23 @@ subroutine(hairSimulationAlgorithm) void PBDApproach( const uint localStrandInde
 	
 	for(int i = 0 ; i < g_numIterations ; i++){
 		
+		// split the solving in non adjacent pairs of vertices 
 		if( localVertexIndex <  floor(gl_WorkGroupSize.x/2) && (index0 % g_numVerticesPerStrand) < g_numVerticesPerStrand-1){
-			applyLengthConstraint( sharedPos[index0], fixed0, sharedPos[index1], fixed1, g_strandLength/g_numVerticesPerStrand, stiffness);
+			applyLengthConstraint( sharedPos[index0], sharedFixed[index0], sharedPos[index1], sharedFixed[index1], g_strandLength/g_numVerticesPerStrand, stiffness);
 
 		}
 		memoryBarrierShared();
-		if( (index1 % g_numVerticesPerStrand) < g_numVerticesPerStrand -1){
-			applyLengthConstraint( sharedPos[index1], fixed1, sharedPos[index2], fixed2, g_strandLength/g_numVerticesPerStrand, stiffness);			
+		if( localVertexIndex <  floor((gl_WorkGroupSize.x-1)/2) && (index1 % g_numVerticesPerStrand) < g_numVerticesPerStrand -1){
+			applyLengthConstraint( sharedPos[index1], sharedFixed[index1], sharedPos[index2], sharedFixed[index2], g_strandLength/g_numVerticesPerStrand, stiffness);			
 		}
 		memoryBarrierShared();
 
 	}
 
 	vec4 newVelocity = vec4((sharedPos[localVertexIndex].xyz - oldPosition.xyz) / g_timeStep ,0.0); 
-
-	updateParticle(sharedPos[localVertexIndex], oldPosition,newVelocity,color );
+	newVelocity = calculateFrictionAndRepulsionVelocityCorrection( newVelocity, sharedPos[localVertexIndex] );
+	
+	updateParticle(sharedPos[localVertexIndex], oldPosition, newVelocity, color );
 
 }
+

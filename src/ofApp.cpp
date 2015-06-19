@@ -24,8 +24,7 @@
 void ofApp::reloadShaders(){
 
 
-	glGenBuffers((int)UniformBuffers::Size, mUbos);
-		
+	
 
 	mComputeShader.setupShaderFromFile(GL_COMPUTE_SHADER,"hairSimulation.glsl");
 	mComputeShader.linkProgram();
@@ -34,8 +33,8 @@ void ofApp::reloadShaders(){
 	glGetProgramiv( mComputeShader.getProgram(), GL_COMPUTE_WORK_GROUP_SIZE, size);
 	
 
-	mComputeShader.printSubroutineNames(GL_COMPUTE_SHADER);
-	mComputeShader.printSubroutineUniforms(GL_COMPUTE_SHADER);
+	//mComputeShader.printSubroutineNames(GL_COMPUTE_SHADER);
+	//mComputeShader.printSubroutineUniforms(GL_COMPUTE_SHADER);
 
 	
 	mHairshader.setupShaderFromFile( GL_VERTEX_SHADER, "basic_VS.glsl");
@@ -135,13 +134,13 @@ void ofApp::setup(){
 	
 	mReloadShaders = true; 
 	ofSetLogLevel( OF_LOG_VERBOSE);
-	ofSetVerticalSync(false);
+	//ofSetVerticalSync(false);
 	camera.setAutoDistance(false);
 	camera.setupPerspective(false,60,0.1,1000);
 	camera.setPosition(10,15,10);
 	camera.lookAt(ofVec3f(0,0,0));
 	
-	mFurryMesh = ofMesh::sphere(4,50 ); 
+	mFurryMesh = ofMesh::sphere(4,120); 
 	mNumHairStands = mFurryMesh.getNumVertices();
 	mNumParticles = mNumHairStands * NUM_HAIR_PARTICLES;
 	particles.resize(mNumParticles);
@@ -180,7 +179,8 @@ void ofApp::setup(){
 
 
 	}
-	
+
+	glGenBuffers((int)UniformBuffers::Size, mUbos);
 
 
 	mModelAnimation.makeIdentityMatrix();
@@ -240,16 +240,16 @@ void ofApp::update(){
 		timeStep = 0.02;
 
 
-	ofMatrix4x4 modelAnimationMatrixDelta = mModelAnimation * mModelAnimationPrevInversed;
-	mModelAnimationPrevInversed = mModelAnimation.getInverse();
+	//ofMatrix4x4 modelAnimationMatrixDelta = mModelAnimation * mModelAnimationPrevInversed;
+	//mModelAnimationPrevInversed = mModelAnimation.getInverse();
 
-	static ofQuaternion first, second; 
-	first.makeRotate(0,0,0,0);
-	second.makeRotate(180,1,1,0);
-	mModelOrientation.slerp( sin(0.2f* ofGetElapsedTimef()), first, second);
-	mModelAnimation.makeIdentityMatrix();
-	mModelAnimation.postMultRotate(mModelOrientation);
-	mModelAnimation.setTranslation( ofVec3f( 0,5.0f*abs( sin( ofGetElapsedTimef() ) ), 0));
+	//static ofQuaternion first, second; 
+	//first.makeRotate(0,0,0,0);
+	//second.makeRotate(180,1,1,0);
+	//mModelOrientation.slerp( sin(0.2f* ofGetElapsedTimef()), first, second);
+	//mModelAnimation.makeIdentityMatrix();
+	//mModelAnimation.postMultRotate(mModelOrientation);
+	//mModelAnimation.setTranslation( ofVec3f( 0,5.0f*abs( sin( ofGetElapsedTimef() ) ), 0));
 
 
 	updateUBO( timeStep ); 
@@ -391,7 +391,7 @@ void ofApp::createGui(){
 	mShaderUniforms.add( mNumConstraintIterations.set("numIterations", 25, 0,200));
 	mShaderUniforms.add( mStiffness.set("stiffness",1.0f, 0,1));
 	mShaderUniforms.add( mFriction.set("friction",0.1f, 0,1.0));
-	mShaderUniforms.add( mRepulsion.set("repulsion",0.1f, 0,50.0));
+	mShaderUniforms.add( mRepulsion.set("repulsion",0.1f, 0,5.0));
 	mShaderUniforms.add( mFTLDistanceDamping.set("ftlDamping", 1.0,0.0,1.0));
 	mSimulationAlgorithms.setName( "shader algorithms");
 	

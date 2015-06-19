@@ -44,6 +44,7 @@ subroutine(hairSimulationAlgorithm) void DFTLApproach( const uint localStrandInd
  	groupMemoryBarrier();
 
 	vec4 newVelocity = vec4((sharedPos[localVertexIndex].xyz - oldPosition.xyz) / g_timeStep ,0.0); 
+	newVelocity = calculateFrictionAndRepulsionVelocityCorrection( newVelocity, sharedPos[localVertexIndex] );
 
 	updateParticle(sharedPos[gl_LocalInvocationID.x], oldPosition,newVelocity,color );
 }
