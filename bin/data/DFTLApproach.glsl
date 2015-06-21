@@ -44,6 +44,24 @@ subroutine(hairSimulationAlgorithm) void DFTLApproach( const uint localStrandInd
  	groupMemoryBarrier();
 
 	vec4 newVelocity = vec4((sharedPos[localVertexIndex].xyz - oldPosition.xyz) / g_timeStep ,0.0); 
+	
+
+	vec4 sphere = vec4(0,0,0,4) + g_modelTranslation;
+	vec3 collisionPoint, normal; 
+	if( calculateSphereCollision( oldPosition, sharedPos[localVertexIndex] , sphere , collisionPoint, normal ) ){
+
+		// bounce particle on surface of sphere 
+
+		vec3 u = dot(newVelocity.xyz , normal ) * normal; 
+		vec3 w = velocity.xyz - u; 
+		newVelocity.xyz = w - u; 
+		sharedPos[localVertexIndex].xyz = collisionPoint;
+
+	}
+
+
+
+
 	newVelocity = calculateFrictionAndRepulsionVelocityCorrection( newVelocity, sharedPos[localVertexIndex] );
 
 	updateParticle(sharedPos[gl_LocalInvocationID.x], oldPosition,newVelocity,color );
