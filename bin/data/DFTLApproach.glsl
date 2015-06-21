@@ -59,7 +59,18 @@ subroutine(hairSimulationAlgorithm) void DFTLApproach( const uint localStrandInd
 
 	}
 
+vec3 planePosition = vec3(0,9,0);
+	vec3 planeNormal = vec3(0,-1,0);
+	if( calculatePlaneCollision( oldPosition, sharedPos[localVertexIndex] ,  planePosition, planeNormal, collisionPoint ) ){
 
+		// bounce particle on surface of sphere 
+
+		vec3 u = dot(newVelocity.xyz , planeNormal ) * planeNormal; 
+		vec3 w = velocity.xyz - u; 
+		newVelocity.xyz = w -  u; 
+		sharedPos[localVertexIndex].xyz = collisionPoint;
+
+	}
 
 
 	newVelocity = calculateFrictionAndRepulsionVelocityCorrection( newVelocity, sharedPos[localVertexIndex] );

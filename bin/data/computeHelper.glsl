@@ -56,8 +56,6 @@ bool calculateSphereCollision( vec4 prevPosition, vec4 position, vec4 sphere, in
 	// first check if the new point lies within the sphere 
 	if(  length(pS) < radius  ){
 
-		//invarient: intersection sphere 
-
 		// // calculate ray->sphere collision point 
 
 		// // project sphere position onto the collision ray 
@@ -76,6 +74,35 @@ bool calculateSphereCollision( vec4 prevPosition, vec4 position, vec4 sphere, in
 		collisionPoint = spherePosition + radius * normal; 
 
 
+
+		return true; 
+
+	}
+
+
+	return false; 
+
+
+}
+
+
+bool calculatePlaneCollision( vec4 prevPosition, vec4 position, vec3 planePosition , vec3 planeNormal, inout vec3 collisionPoint  ){
+
+	
+	const vec3 ray =  normalize(position.xyz - prevPosition.xyz);
+	
+	const float collisionFactor = dot((position.xyz - planePosition), planeNormal ); 
+	
+
+	// check if the new point lies behind the plane
+	if(  collisionFactor < 0  ){
+
+		// calculate line - plane intersection 
+
+		// delta from prevPosition to position where the intesections is
+		const float delta = -dot( prevPosition.xyz - planePosition, planeNormal ) / dot( ray , planeNormal ); 
+
+		collisionPoint =  prevPosition.xyz +  delta  * ray;
 
 		return true; 
 
