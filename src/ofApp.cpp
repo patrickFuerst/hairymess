@@ -99,7 +99,7 @@ void ofApp::updateUBO( float deltaTime ){
 	mVoxelGridData.deltaTime = deltaTime;
 	
 	if(	!uboInit ){
-		mConstSimulationData.gravityForce = ofVec4f(20,-2,0,0);
+		mConstSimulationData.gravityForce = ofVec4f(0,-2,0,0);
 		mConstSimulationData.numVerticesPerStrand = NUM_HAIR_PARTICLES;
 		mConstSimulationData.numStrandsPerThreadGroup =   WORK_GROUP_SIZE / NUM_HAIR_PARTICLES;
 		mConstSimulationData.strandLength = HAIR_LENGTH;
@@ -134,13 +134,15 @@ void ofApp::setup(){
 	
 	mReloadShaders = true; 
 	ofSetLogLevel( OF_LOG_VERBOSE);
-	//ofSetVerticalSync(false);
+	ofSetVerticalSync(false);
 	camera.setAutoDistance(false);
 	camera.setupPerspective(false,60,0.1,1000);
 	camera.setPosition(10,15,10);
 	camera.lookAt(ofVec3f(0,0,0));
 	
-	mFurryMesh = ofMesh::sphere(4,120); 
+
+	mFloor = ofMesh::plane(30,30 ); 
+	mFurryMesh = ofMesh::sphere(4,200); 
 	mNumHairStands = mFurryMesh.getNumVertices();
 	mNumParticles = mNumHairStands * NUM_HAIR_PARTICLES;
 	particles.resize(mNumParticles);
@@ -251,8 +253,8 @@ void ofApp::update(){
 	second.makeRotate(180,1,1,0);
 	mModelOrientation.slerp( sin(0.2f* ofGetElapsedTimef()), first, second);
 	mModelAnimation.makeIdentityMatrix();
-	//mModelAnimation.postMultRotate(mModelOrientation);
-	mModelAnimation.setTranslation( ofVec3f( 0,5.0f*abs( sin( ofGetElapsedTimef() ) ), 0));
+	mModelAnimation.postMultRotate(mModelOrientation);
+	mModelAnimation.setTranslation( ofVec3f( 0,4 + 5.0f*abs( sin( ofGetElapsedTimef() ) ), 0));
 
 
 	updateUBO( timeStep ); 
@@ -292,11 +294,13 @@ void ofApp::update(){
 
 //--------------------------------------------------------------
 void ofApp::draw(){
+	
 	camera.begin();
+	
 	ofEnableDepthTest();
-	ofClear( ofColor::gray);
-	ofDrawAxis(10);
-	ofDrawGrid(1.25, 10 , false,false,true,false);
+	ofClear( ofColor::white);
+	//ofDrawAxis(10);
+	//ofDrawGrid(1.25, 10 , false,false,true,false);
 
 	if( mDrawFur ){
 
@@ -319,8 +323,17 @@ void ofApp::draw(){
 		mFurryMesh.draw();
 		ofPopMatrix();
 
+		drawFloor();
+
 		popGlDebugGroup();
 
+	}else{
+		ofSetColor(ofColor::ghostWhite);
+		ofPushMatrix();
+		ofRotateX(90);
+		mFloor.draw();
+		ofPopMatrix();
+	
 	}
 	
 	
@@ -368,6 +381,63 @@ void ofApp::draw(){
 	drawInfo();
 	drawDebug();
 
+
+}
+
+void ofApp::drawFloor(){
+
+
+	glEnable(GL_STENCIL_TEST ); 
+	
+	// draw floor
+	glStencilFunc(GL_ALWAYS , 1 , 0xFF ); 
+	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE );
+	glStencilMask(0xFF ); 
+	glDepthMask(GL_FALSE);
+	glClear(GL_STENCIL_BUFFER_BIT ); 
+	
+	ofSetColor(ofColor::ghostWhite);
+	ofPushMatrix();
+		ofRotateX(90);
+		mFloor.draw();
+	ofPopMatrix();
+	
+	// draw ball refelction 
+
+	glStencilFunc(GL_EQUAL, 1, 0xFF ); 
+	glStencilMask( 0x00 ); 
+	glDepthMask(GL_TRUE);
+
+	ofPushMatrix();
+
+		ofMultMatrix( ofMatrix4x4::newScaleMatrix(1,-1,1) ) ;
+		mHairshader.begin();
+		mHairshader.setUniform4f( "overrideColor", ofVec4f(0.6,0.6,0.6,0.8) );
+		glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT); //? 
+		//mHairVbo.draw(GL_POINTS,0,particles.size());
+		glEnable(GL_PRIMITIVE_RESTART);
+		mHairVbo.drawElements( GL_LINE_STRIP , mHairVbo.getNumIndices() ); 
+		glDisable(GL_PRIMITIVE_RESTART);
+		mHairshader.setUniform4f( "overrideColor", ofVec4f(1,1,1,1.0) );
+
+		mHairshader.end();
+
+		ofMatrix4x4 mirrorMatrix = mModelAnimation;
+
+
+		ofColor red = ofColor::red;
+		red.r *= 0.6;
+		red.g *= 0.6;
+		red.b *= 0.6;
+		red.a *= 0.8;
+		ofSetColor(red);
+		ofPushMatrix();
+		ofMultViewMatrix(mModelAnimation);
+		mFurryMesh.draw();
+		ofPopMatrix();
+	ofPopMatrix();
+
+	glDisable(GL_STENCIL_TEST ); 
 
 }
 
@@ -629,7 +699,8 @@ void ofApp::drawInfo(){
      "//       // \n"
      "//       // ";
     
-    ofSetColor(0, 255, 0);
+    //ofSetColor(0, 255, 0);
+	ofSetColor( ofColor::black );
     ofDrawBitmapString( info, 30, ofGetWindowHeight() - 150);
     ofSetColor(255, 255, 255);
 

@@ -43,6 +43,8 @@ subroutine(hairSimulationAlgorithm) void PBDApproach( const uint localStrandInde
 
 	}
 
+	barrier(); // need for removing undefined behaviour with plane collision
+
 
 	vec4 newVelocity = vec4((sharedPos[localVertexIndex].xyz - oldPosition.xyz) / g_timeStep ,0.0); 
 
@@ -59,17 +61,17 @@ subroutine(hairSimulationAlgorithm) void PBDApproach( const uint localStrandInde
 
 	}
 
-	vec3 planePosition = vec3(0,9.5,0);
-	vec3 planeNormal = vec3(0,-1,0);
+
+	vec3 planePosition = vec3(0,0,0);
+	vec3 planeNormal = vec3(0,1,0);
 	if( calculatePlaneCollision( oldPosition, sharedPos[localVertexIndex] ,  planePosition, planeNormal, collisionPoint ) ){
 
 		// bounce particle on surface of sphere 
 
 		vec3 u = dot(newVelocity.xyz , planeNormal ) * planeNormal; 
 		vec3 w = velocity.xyz - u; 
-		newVelocity.xyz = w - u; 
+		//newVelocity.xyz = (w - u); 
 		sharedPos[localVertexIndex].xyz = collisionPoint;
-
 	}
 
 

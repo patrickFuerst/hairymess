@@ -16,10 +16,14 @@ in block
 	vec4 color;
 } In;
 
+
+uniform vec4 overrideColor; 
+
 layout(location = FRAG_COLOR, index = 0) out vec4 Color;
+
 
 void main()
 {
-	Color = In.color;
+	Color = overrideColor * In.color;
 }
 

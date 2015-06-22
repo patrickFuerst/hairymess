@@ -4,10 +4,10 @@
 	<Draw_Fur>204</Draw_Fur>
 	<shader_params>
 		<velocityDamping>1</velocityDamping>
-		<numIterations>25</numIterations>
+		<numIterations>30</numIterations>
 		<stiffness>1</stiffness>
-		<friction>0.454082</friction>
-		<repulsion>1.81122</repulsion>
+		<friction>0.158163</friction>
+		<repulsion>3.62245</repulsion>
 		<ftlDamping>1</ftlDamping>
 	</shader_params>
 <group/>

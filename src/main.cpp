@@ -5,8 +5,12 @@
 int main( ){
     // this example uses compute shaders which are only supported since
     // openGL 4.3
-	ofGLWindowSettings settings;
+	ofGLFWWindowSettings settings;
 	settings.setGLVersion(4,4);
+	
+	settings.stencilBits = 8; 
+	settings.width = 1920;
+	settings.height = 1080;
 	//settings.windowMode = OF_FULLSCREEN;
 	ofCreateWindow(settings);			// <-------- setup the GL context
 

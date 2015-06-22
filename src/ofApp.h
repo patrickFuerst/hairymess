@@ -19,6 +19,7 @@ class ofApp : public ofBaseApp{
 		void draw();
 		void exit();
 
+		void drawFloor();
 		
 		void keyPressed(int key);
 		void keyReleased(int key);
@@ -152,6 +153,8 @@ class ofApp : public ofBaseApp{
 		ofEasyCam camera;
 		//ofCamera camera;
 		ofVbo mHairVbo;
+
+		ofVboMesh mFloor; 
 
 		
 		ofxPanel gui;

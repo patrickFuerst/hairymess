@@ -86,7 +86,7 @@ bool calculateSphereCollision( vec4 prevPosition, vec4 position, vec4 sphere, in
 }
 
 
-bool calculatePlaneCollision( vec4 prevPosition, vec4 position, vec3 planePosition , vec3 planeNormal, inout vec3 collisionPoint  ){
+bool calculatePlaneCollision(const vec4 prevPosition, const vec4 position, const  vec3 planePosition ,const vec3 planeNormal, inout vec3 collisionPoint  ){
 
 	
 	const vec3 ray =  normalize(position.xyz - prevPosition.xyz);
