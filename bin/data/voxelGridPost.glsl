@@ -11,14 +11,26 @@
 
 
 struct Voxel{
-	vec4 velocity; 
+	//vec4 velocity; 
 	vec4 gradient; 
-	float density; // could be int
+	//float density; // could be int
 };
 
 
 layout(std140, binding=1) buffer voxel{
     Voxel g_voxelGrid[];
+};
+
+layout(std140, binding=2) buffer density{
+    float g_densityBuffer[];
+};
+
+layout(std140, binding=3) buffer velocity{
+    vec4 g_velocityBuffer[];
+};
+
+layout(std140, binding=4) buffer velocity2{
+    vec4 g_velocityBufferNew[];
 };
 
 
@@ -39,19 +51,19 @@ int  voxelIndex( const float x, const float y, const float z ) {
 
 const float getDensityX( const uint x){
 	const int voxelIndex = voxelIndex( x, gl_GlobalInvocationID.y, gl_GlobalInvocationID.z );
-	return g_voxelGrid[voxelIndex].density;
+	return g_densityBuffer[voxelIndex];
 }
 const float getDensityY( const uint y){
 	const int voxelIndex = voxelIndex( gl_GlobalInvocationID.x, y, gl_GlobalInvocationID.z );
-	return g_voxelGrid[voxelIndex].density;
+	return g_densityBuffer[voxelIndex];
 }
 const float getDensityZ( const uint z){
 	const int voxelIndex = voxelIndex( gl_GlobalInvocationID.x, gl_GlobalInvocationID.y, z );
-	return g_voxelGrid[voxelIndex].density;
+	return g_densityBuffer[voxelIndex];
 }
 
 
-const vec3 centralDifference(){
+const vec3 calculateDensityGradient(){
 	
 	const uint x = gl_GlobalInvocationID.x;
 	const uint y = gl_GlobalInvocationID.y;
@@ -61,6 +73,7 @@ const vec3 centralDifference(){
 	if (y < 1 || y >= g_gridSize - 1) return vec3(0); 
 	if (z < 1 || z >= g_gridSize - 1) return vec3(0); 
 
+	// Central Difference
 	// use trilinearinterpolation for getDensity, could also be an approach
 	const float x1 = getDensityX( x +1 );
 	const float x2 = getDensityX( x -1 );
@@ -80,25 +93,43 @@ const vec3 centralDifference(){
 
 }
 
+
+void lowPassFilterVelocity(){
+
+	const mat3 filterKernel = mat3(1) * 1.0/9.0;
+
+
+
+
+
+}
+
 void main(){
 	
 	
 	const int voxelIndex = voxelIndex( gl_GlobalInvocationID.x, gl_GlobalInvocationID.y, gl_GlobalInvocationID.z );
-	const float density = g_voxelGrid[voxelIndex].density;
+	const float density = g_densityBuffer[voxelIndex];
 
 	// normalize velocity 
-	if( density > 0.0)
-		g_voxelGrid[voxelIndex].velocity /= density; 
+	//if( density > 0.0)
+		g_velocityBufferNew[voxelIndex] = vec4(-10,0,0,0); 
+
 
 	// calculate gradient 
-	const vec3 gradient  = centralDifference();
-	const float len = length(gradient); 
-
-	if( len > 0.0)
-		//g_voxelGrid[voxelIndex].gradient.xyz = normalize(gradient); // normalized gradient
+	const vec3 gradient  = calculateDensityGradient();
+	
+	#ifdef NORMALIZED_GRADIENT
+		// if we use this gradiet acts more like a position offset and values for repulsion need to be very low 
+		// better results with non-normalized gradient
+		const float len = length(gradient); 
+		if( len > 0.0)
+			g_voxelGrid[voxelIndex].gradient.xyz = normalize(gradient); // normalized gradient
+		else
+			g_voxelGrid[voxelIndex].gradient = vec4(0);
+	#else
+	
 		g_voxelGrid[voxelIndex].gradient.xyz = gradient; // not normalized gradient
-	else
-		g_voxelGrid[voxelIndex].gradient = vec4(0);
+	#endif
 }
 
 

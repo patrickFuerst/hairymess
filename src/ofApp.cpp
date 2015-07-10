@@ -132,6 +132,12 @@ void ofApp::updateUBO( float deltaTime ){
 //--------------------------------------------------------------
 void ofApp::setup(){
 	
+	// setup opengl debuging 
+
+	glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS ); 
+	glDebugMessageCallback( ofApp::glErrorCallback , nullptr ); 
+
+
 	mReloadShaders = true; 
 	ofSetLogLevel( OF_LOG_VERBOSE);
 	ofSetVerticalSync(false);
@@ -202,20 +208,21 @@ void ofApp::setup(){
 	glPrimitiveRestartIndex( restartIndex ); 
 	glDisable(GL_PRIMITIVE_RESTART);
 
-	// VOXEL BUFFER
+	// VOXEL BUFFERS
 
-	//mDensityBuffer1.allocate( sizeof(float)* mVoxelGridSize * mVoxelGridSize * mVoxelGridSize, GL_STREAM_COPY);
-	//mDensityBuffer2.allocate( sizeof(float)* mVoxelGridSize * mVoxelGridSize * mVoxelGridSize, GL_STREAM_COPY);
+	mDensityBuffer.allocate( sizeof(float)* mVoxelGridSize * mVoxelGridSize * mVoxelGridSize, GL_STREAM_COPY);
+	mCurrentVelocityBuffer.allocate( sizeof(ofVec4f)* mVoxelGridSize * mVoxelGridSize * mVoxelGridSize, GL_STREAM_COPY);
+	mOldVelocityBuffer.allocate( sizeof(ofVec4f)* mVoxelGridSize * mVoxelGridSize * mVoxelGridSize, GL_STREAM_COPY);
 
 
 
 	mVoxelGridSize = VOXEL_GRID_SIZE;
 	mVoxelBuffer.allocate( sizeof(Voxel) * mVoxelGridSize * mVoxelGridSize * mVoxelGridSize, GL_STREAM_COPY);
 	mVoxelBuffer.bindBase(GL_SHADER_STORAGE_BUFFER,1);
-	mVoxelVBO.setAttributeBuffer( VELOCITY , mVoxelBuffer, 4 , sizeof(Voxel), offsetof(Voxel, Voxel::velocity)  ); // first attribute is velocity 
+	mVoxelVBO.setAttributeBuffer( VELOCITY , mCurrentVelocityBuffer, 4 , sizeof(ofVec4f), 0  ); // first attribute is velocity 
 	mVoxelVBO.setAttributeBuffer( GRADIENT , mVoxelBuffer, 4 , sizeof(Voxel), offsetof(Voxel, Voxel::gradient)  ); // second attribute is gradient 
-	mVoxelVBO.setAttributeBuffer( DENSITY , mVoxelBuffer, 1 , sizeof(Voxel), offsetof(Voxel, Voxel::density) ); // third attribute is density  
-	//mVoxelVBO.setAttributeBuffer( DENSITY , mDensityBuffer1, 1 , sizeof(float), 0 ); // third attribute is density  
+//	mVoxelVBO.setAttributeBuffer( DENSITY , mVoxelBuffer, 1 , sizeof(Voxel), offsetof(Voxel, Voxel::density) ); // third attribute is density  
+	mVoxelVBO.setAttributeBuffer( DENSITY , mDensityBuffer, 1 , sizeof(float), 0 ); // third attribute is density  
 
 
 	ofBackground(0);
@@ -268,7 +275,9 @@ void ofApp::update(){
 	
 	particlesBuffer.bindBase(GL_SHADER_STORAGE_BUFFER, 0);
 	mVoxelBuffer.bindBase(GL_SHADER_STORAGE_BUFFER,1);
-	
+	mCurrentVelocityBuffer.bindBase( GL_SHADER_STORAGE_BUFFER, 3); 
+
+
 	glBindBufferBase( GL_UNIFORM_BUFFER , UniformBuffers::SimulationData, mUbos[UniformBuffers::SimulationData] ); 
 	glBindBufferBase( GL_UNIFORM_BUFFER , UniformBuffers::ConstSimulationData, mUbos[UniformBuffers::ConstSimulationData] ); 
 	glBindBufferBase( GL_UNIFORM_BUFFER , UniformBuffers::ModelData, mUbos[UniformBuffers::ModelData] ); 
@@ -285,6 +294,7 @@ void ofApp::update(){
 	
 	particlesBuffer.unbindBase(GL_SHADER_STORAGE_BUFFER, 0);
 	mVoxelBuffer.unbindBase(GL_SHADER_STORAGE_BUFFER,1);
+	mCurrentVelocityBuffer.unbindBase( GL_SHADER_STORAGE_BUFFER, 3); 
 
 	mComputeShader.end();
 
@@ -498,19 +508,20 @@ void ofApp::createVoxelGrid(float timeStep){
 	glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_R32F, GL_RED, GL_FLOAT, &zero );		
 	mVoxelBuffer.unbind(GL_SHADER_STORAGE_BUFFER);
 
-	/*mDensityBuffer1.bind(GL_SHADER_STORAGE_BUFFER);
+	mDensityBuffer.bind(GL_SHADER_STORAGE_BUFFER);
 	glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_R32F, GL_RED, GL_FLOAT, &zero );		
-	mDensityBuffer1.unbind(GL_SHADER_STORAGE_BUFFER);
+	mDensityBuffer.unbind(GL_SHADER_STORAGE_BUFFER);
 
-	mDensityBuffer2.bind(GL_SHADER_STORAGE_BUFFER);
+	mCurrentVelocityBuffer.bind(GL_SHADER_STORAGE_BUFFER);
 	glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_R32F, GL_RED, GL_FLOAT, &zero );		
-	mDensityBuffer2.unbind(GL_SHADER_STORAGE_BUFFER);*/
+	mCurrentVelocityBuffer.unbind(GL_SHADER_STORAGE_BUFFER);
 
 	pushGlDebugGroup( "Fill Voxel Grid" ); 
 	
 	particlesBuffer.bindBase(GL_SHADER_STORAGE_BUFFER, 0);
 	mVoxelBuffer.bindBase(GL_SHADER_STORAGE_BUFFER,1);
-	//mDensityBuffer1.bindBase( GL_SHADER_STORAGE_BUFFER,2);
+	mDensityBuffer.bindBase( GL_SHADER_STORAGE_BUFFER,2);
+	mCurrentVelocityBuffer.bindBase( GL_SHADER_STORAGE_BUFFER,3); 
 
 	mVoxelComputeShaderFill.begin();
 	
@@ -529,7 +540,8 @@ void ofApp::createVoxelGrid(float timeStep){
 
 	particlesBuffer.unbindBase(GL_SHADER_STORAGE_BUFFER,0); 
 	mVoxelBuffer.unbindBase(GL_SHADER_STORAGE_BUFFER,1);
-	//mDensityBuffer1.unbindBase( GL_SHADER_STORAGE_BUFFER,2);
+	mDensityBuffer.unbindBase( GL_SHADER_STORAGE_BUFFER,2);
+	mCurrentVelocityBuffer.unbindBase( GL_SHADER_STORAGE_BUFFER,3);
 
 	popGlDebugGroup();
 		
@@ -546,6 +558,10 @@ void ofApp::createVoxelGrid(float timeStep){
 	mVoxelComputeShaderPostProcess.begin();
 	
 	mVoxelBuffer.bindBase(GL_SHADER_STORAGE_BUFFER,1);
+	mDensityBuffer.bindBase( GL_SHADER_STORAGE_BUFFER,2);
+	mCurrentVelocityBuffer.bindBase( GL_SHADER_STORAGE_BUFFER,3);
+	mOldVelocityBuffer.bindBase( GL_SHADER_STORAGE_BUFFER,4);
+
 	glBindBufferBase( GL_UNIFORM_BUFFER , UniformBuffers::ConstVoxelGridData, mUbos[UniformBuffers::ConstVoxelGridData] ); 
 
 	mVoxelComputeShaderPostProcess.dispatchCompute(voxelGridWorkGroups , voxelGridWorkGroups , voxelGridWorkGroups);
@@ -555,10 +571,15 @@ void ofApp::createVoxelGrid(float timeStep){
 
 	mVoxelComputeShaderPostProcess.end();
 	
-	particlesBuffer.unbindBase(GL_SHADER_STORAGE_BUFFER,0); 
 	mVoxelBuffer.unbindBase(GL_SHADER_STORAGE_BUFFER,1);
-
-
+	mDensityBuffer.unbindBase( GL_SHADER_STORAGE_BUFFER,2);
+	mCurrentVelocityBuffer.unbindBase( GL_SHADER_STORAGE_BUFFER,3);
+	mOldVelocityBuffer.unbindBase( GL_SHADER_STORAGE_BUFFER,4);
+	
+	// velocity is written to oldbuffer 
+	// using ping pong 
+	std::swap( mCurrentVelocityBuffer, mOldVelocityBuffer ); 
+	
 	popGlDebugGroup();
 }
 
@@ -661,7 +682,7 @@ void ofApp::pushGlDebugGroup( std::string message ){
 	glGetIntegerv(GL_MAX_DEBUG_MESSAGE_LENGTH, &maxLenght );
 
 	if( message.size() > maxLenght ){
-		ofLogVerbose("OpenGl debug message toolong"); 
+		ofLogVerbose("OpenGl debug message too long"); 
 	}else{
 	
 		glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, NULL , message.size() , message.data() );
@@ -672,6 +693,60 @@ void ofApp::pushGlDebugGroup( std::string message ){
 void ofApp::popGlDebugGroup(){
 
 	glPopDebugGroup();
+}
+
+void GLAPIENTRY ofApp::glErrorCallback(GLenum source,
+                                           GLenum type,
+                                           GLuint id,
+                                           GLenum severity,
+                                           GLsizei length,
+                                           const GLchar* message,
+                                           const void* userParam){
+ 
+	if( severity == GL_DEBUG_SEVERITY_NOTIFICATION)
+		return ;
+
+
+    cout << "---------------------opengl-callback-start------------" << endl;
+    cout << "message: "<< message << endl;
+    cout << "type: ";
+    switch (type) {
+    case GL_DEBUG_TYPE_ERROR:
+        cout << "ERROR";
+        break;
+    case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
+        cout << "DEPRECATED_BEHAVIOR";
+        break;
+    case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
+        cout << "UNDEFINED_BEHAVIOR";
+        break;
+    case GL_DEBUG_TYPE_PORTABILITY:
+        cout << "PORTABILITY";
+        break;
+    case GL_DEBUG_TYPE_PERFORMANCE:
+        cout << "PERFORMANCE";
+        break;
+    case GL_DEBUG_TYPE_OTHER:
+        cout << "OTHER";
+        break;
+    }
+    cout << endl;
+ 
+    cout << "id: " << id << endl;
+    cout << "severity: ";
+    switch (severity){
+    case GL_DEBUG_SEVERITY_LOW:
+        cout << "LOW";
+        break;
+    case GL_DEBUG_SEVERITY_MEDIUM:
+        cout << "MEDIUM";
+        break;
+    case GL_DEBUG_SEVERITY_HIGH:
+        cout << "HIGH";
+        break;
+    }
+    cout << endl;
+    cout << "---------------------opengl-callback-end--------------" << endl;
 }
 
 

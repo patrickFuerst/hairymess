@@ -196,7 +196,7 @@ vec4 getVelocity( const float x, const float y, const float z ){
 	if (z < 0 || z >= g_gridSize) return vec4(0); 
 	
 	const int index = voxelIndex(x, y, z );
-	return g_voxelGrid[ index ].velocity;
+	return g_velocityBuffer[ index ];
 	
 }
 

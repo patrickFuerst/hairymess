@@ -20,9 +20,9 @@ struct Particle{
 
 
 struct Voxel{
-	vec4 velocity;
+	//vec4 velocity;
 	vec4 gradient;
-	float density; // could be int
+	//float density; // could be int
 };
 
 layout(std140, binding=0) buffer particle{
@@ -33,6 +33,9 @@ layout(std140, binding=1) buffer voxel{
     Voxel g_voxelGrid[];
 };
 
+layout(std140, binding=3) buffer velocity{
+    vec4 g_velocityBuffer[];
+};
 
 
 layout(std140, binding = SIMULATION_DATA_BINDING ) uniform SimulationData { 

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "ofMain.h"
 #include "ofBufferObject.h"
@@ -49,6 +49,7 @@ class ofApp : public ofBaseApp{
 		void drawDebug();
 		void drawInfo();
 
+		static void GLAPIENTRY glErrorCallback (GLenum source​, GLenum type​, GLuint id​, GLenum severity​, GLsizei length​, const GLchar* message​, const void* userParam​);
 
 
 
@@ -63,10 +64,10 @@ class ofApp : public ofBaseApp{
 		};
 
 		struct Voxel{
-			ofVec4f velocity;
+			//ofVec4f velocity;
 			ofVec4f gradient;
-			float density; 
-			int pad[3];
+			//float density; 
+			//int pad[3];
 		}; 
 
 
@@ -140,7 +141,7 @@ class ofApp : public ofBaseApp{
 
 		ofShader mHairshader; 
 		vector<Particle> particles;
-		ofBufferObject particlesBuffer, mVoxelBuffer, mDensityBuffer1, mDensityBuffer2; 
+		ofBufferObject particlesBuffer, mVoxelBuffer, mDensityBuffer, mCurrentVelocityBuffer, mOldVelocityBuffer; 
 
 		ofMesh mFurryMesh;
 		int mNumHairStands,  mNumParticles; ; 

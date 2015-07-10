@@ -1,13 +1,13 @@
 <group>
 	<Draw_BoundingBox>0</Draw_BoundingBox>
 	<Draw_VoxelGrid>0</Draw_VoxelGrid>
-	<Draw_Fur>204</Draw_Fur>
+	<Draw_Fur>1</Draw_Fur>
 	<shader_params>
-		<velocityDamping>1</velocityDamping>
+		<velocityDamping>0.984694</velocityDamping>
 		<numIterations>30</numIterations>
 		<stiffness>1</stiffness>
-		<friction>0.158163</friction>
-		<repulsion>3.62245</repulsion>
+		<friction>0.0663265</friction>
+		<repulsion>2.09184</repulsion>
 		<ftlDamping>1</ftlDamping>
 	</shader_params>
 <group/>
