@@ -5,6 +5,20 @@
 
 #include "ofxGui.h"
 
+
+
+class PingPongBuffer{
+
+	public: 
+	void allocate(GLsizeiptr bytes, GLenum usage){ mReadBuffer.allocate(bytes,usage); mWriteBuffer.allocate(bytes,usage);};
+	ofBufferObject& getReadBuffer(){ return mReadBuffer;};
+	ofBufferObject& getWriteBuffer(){ return mWriteBuffer;};
+	void swap(){ std::swap( mReadBuffer, mWriteBuffer ); }; 
+
+	private: 
+	ofBufferObject mReadBuffer, mWriteBuffer; 
+};
+
 class ofApp : public ofBaseApp{
 
 	public:
@@ -140,8 +154,9 @@ class ofApp : public ofBaseApp{
 		//ofShader mConstrainPerStrainComputeShader;
 
 		ofShader mHairshader; 
-		vector<Particle> particles;
-		ofBufferObject particlesBuffer, mVoxelBuffer, mDensityBuffer, mCurrentVelocityBuffer, mOldVelocityBuffer; 
+		vector<Particle> mParticles;
+		ofBufferObject mParticlesBuffer, mVoxelBuffer, mDensityBuffer;
+		PingPongBuffer mVelocityBuffer; 
 
 		ofMesh mFurryMesh;
 		int mNumHairStands,  mNumParticles; ; 

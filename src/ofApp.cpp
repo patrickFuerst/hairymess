@@ -36,13 +36,10 @@ void ofApp::reloadShaders(){
 	//mComputeShader.printSubroutineNames(GL_COMPUTE_SHADER);
 	//mComputeShader.printSubroutineUniforms(GL_COMPUTE_SHADER);
 
-	
 	mHairshader.setupShaderFromFile( GL_VERTEX_SHADER, "basic_VS.glsl");
 	mHairshader.setupShaderFromFile( GL_FRAGMENT_SHADER, "basic_FS.glsl");
 	mHairshader.linkProgram();
 	
-
-
 	mVoxelComputeShaderFill.setupShaderFromFile(GL_COMPUTE_SHADER, "voxelGridFill.glsl" ); 
 	mVoxelComputeShaderFill.linkProgram();
 
@@ -63,18 +60,10 @@ void ofApp::reloadShaders(){
 	/*mVoxelComputeShader.setUniform1i("g_numVerticesPerStrand",NUM_HAIR_PARTICLES);
 	mVoxelComputeShader.setUniform1i("g_numStrandsPerThreadGroup", mNumHairs * mNumHairs / WORK_GROUP_SIZE);	*/
 		
-
-
-
 	mVoxelGridShader.load( "voxelGrid_vs.glsl", "voxelGrid_fs.glsl" ); 
-
-
-
-
-	particlesBuffer.setData(particles,GL_DYNAMIC_DRAW);
-
-
-
+	
+	mParticlesBuffer.setData(mParticles,GL_DYNAMIC_DRAW);
+	
 	mModelAnimation.makeIdentityMatrix();
 }
 
@@ -90,8 +79,7 @@ void ofApp::updateUBO( float deltaTime ){
 	mSimulationData.repulsion = mRepulsion;
 	mSimulationData.ftlDamping = mFTLDistanceDamping;
 	mSimulationData.deltaTime = deltaTime;
-
-
+	
 	mModelData.modelMatrix = mModelAnimation;
 	mModelData.modelMatrixPrevInverted = mModelAnimationPrevInversed; 
 	mModelData.modelTranslation =  mModelAnimation.getTranslation();
@@ -151,7 +139,7 @@ void ofApp::setup(){
 	mFurryMesh = ofMesh::sphere(4,200); 
 	mNumHairStands = mFurryMesh.getNumVertices();
 	mNumParticles = mNumHairStands * NUM_HAIR_PARTICLES;
-	particles.resize(mNumParticles);
+	mParticles.resize(mNumParticles);
 
 	mNumWorkGroups = (( mNumParticles + (WORK_GROUP_SIZE-1))/ WORK_GROUP_SIZE);
 	
@@ -174,7 +162,7 @@ void ofApp::setup(){
 
 			indices.at(index2) = index;  
 
-			auto& p = particles.at(index);
+			auto& p = mParticles.at(index);
 			p.pos = v + j* n * HAIR_LENGTH / NUM_HAIR_PARTICLES;
 			p.pos.w = 1.0; 
 			p.prevPos = p.pos;
@@ -197,10 +185,10 @@ void ofApp::setup(){
 	mModelAnimation.makeIdentityMatrix();
 
 	// PARTICLE BUFFER
-	particlesBuffer.allocate(particles,GL_DYNAMIC_DRAW);
-	particlesBuffer.bindBase(GL_SHADER_STORAGE_BUFFER, 0);
-	mHairVbo.setVertexBuffer(particlesBuffer,4,sizeof(Particle));
-	mHairVbo.setColorBuffer(particlesBuffer,  sizeof(Particle), offsetof(Particle, Particle::color) ); 
+	mParticlesBuffer.allocate(mParticles,GL_DYNAMIC_DRAW);
+	mParticlesBuffer.bindBase(GL_SHADER_STORAGE_BUFFER, 0);
+	mHairVbo.setVertexBuffer(mParticlesBuffer,4,sizeof(Particle));
+	mHairVbo.setColorBuffer(mParticlesBuffer,  sizeof(Particle), offsetof(Particle, Particle::color) ); 
 	mHairVbo.setIndexData( indices.data() , indices.size() , GL_STATIC_DRAW );  
 
 	//let enable and set the right restart index 
@@ -214,11 +202,10 @@ void ofApp::setup(){
 	
 	mVoxelBuffer.allocate( sizeof(Voxel) * mVoxelGridSize * mVoxelGridSize * mVoxelGridSize, GL_STREAM_COPY);
 	mDensityBuffer.allocate( sizeof(float)* mVoxelGridSize * mVoxelGridSize * mVoxelGridSize, GL_STREAM_COPY); 
-	mCurrentVelocityBuffer.allocate( sizeof(ofVec4f)* mVoxelGridSize * mVoxelGridSize * mVoxelGridSize, GL_STREAM_COPY);
-	//mOldVelocityBuffer.allocate( sizeof(ofVec4f)* mVoxelGridSize * mVoxelGridSize * mVoxelGridSize, GL_STREAM_COPY);
+	mVelocityBuffer.allocate( sizeof(ofVec4f)* mVoxelGridSize * mVoxelGridSize * mVoxelGridSize, GL_STREAM_COPY);
 
 	// just for debuging voxel grid
-	mVoxelVBO.setAttributeBuffer( VELOCITY , mCurrentVelocityBuffer, 4 , sizeof(ofVec4f), 0  ); // first attribute is velocity 
+	mVoxelVBO.setAttributeBuffer( VELOCITY , mVelocityBuffer.getReadBuffer() , 4 , sizeof(ofVec4f), 0  ); // first attribute is velocity 
 	mVoxelVBO.setAttributeBuffer( GRADIENT , mVoxelBuffer, 4 , sizeof(Voxel), offsetof(Voxel, Voxel::gradient)  ); // second attribute is gradient 
 	mVoxelVBO.setAttributeBuffer( DENSITY , mDensityBuffer, 1 , sizeof(float), 0 ); // third attribute is density  
 
@@ -271,9 +258,9 @@ void ofApp::update(){
 	pushGlDebugGroup( "Hair Simulation" );
 	mComputeShader.begin();
 	
-	particlesBuffer.bindBase(GL_SHADER_STORAGE_BUFFER, 0);
+	mParticlesBuffer.bindBase(GL_SHADER_STORAGE_BUFFER, 0);
 	mVoxelBuffer.bindBase(GL_SHADER_STORAGE_BUFFER,1);
-	mCurrentVelocityBuffer.bindBase( GL_SHADER_STORAGE_BUFFER, 3); 
+	mVelocityBuffer.getReadBuffer().bindBase( GL_SHADER_STORAGE_BUFFER, 3); 
 
 
 	glBindBufferBase( GL_UNIFORM_BUFFER , UniformBuffers::SimulationData, mUbos[UniformBuffers::SimulationData] ); 
@@ -290,9 +277,9 @@ void ofApp::update(){
 	glBindBufferBase( GL_UNIFORM_BUFFER , UniformBuffers::ConstSimulationData, 0 ); 
 	glBindBufferBase( GL_UNIFORM_BUFFER , UniformBuffers::SimulationData, 0 ); 
 	
-	particlesBuffer.unbindBase(GL_SHADER_STORAGE_BUFFER, 0);
+	mParticlesBuffer.unbindBase(GL_SHADER_STORAGE_BUFFER, 0);
 	mVoxelBuffer.unbindBase(GL_SHADER_STORAGE_BUFFER,1);
-	mCurrentVelocityBuffer.unbindBase( GL_SHADER_STORAGE_BUFFER, 3); 
+	mVelocityBuffer.getReadBuffer().unbindBase( GL_SHADER_STORAGE_BUFFER, 3); 
 
 	mComputeShader.end();
 
@@ -318,7 +305,7 @@ void ofApp::draw(){
 		mHairshader.begin();
 
 		glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT); //? 
-		//mHairVbo.draw(GL_POINTS,0,particles.size());
+		//mHairVbo.draw(GL_POINTS,0,mParticles.size());
 		glEnable(GL_PRIMITIVE_RESTART);
 		mHairVbo.drawElements( GL_LINE_STRIP , mHairVbo.getNumIndices() ); 
 		glDisable(GL_PRIMITIVE_RESTART);
@@ -429,7 +416,7 @@ void ofApp::drawFloor(){
 		mHairshader.begin();
 		mHairshader.setUniform4f( "overrideColor", ofVec4f(0.6,0.6,0.6,0.8) );
 		glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT); //? 
-		//mHairVbo.draw(GL_POINTS,0,particles.size());
+		//mHairVbo.draw(GL_POINTS,0,mParticles.size());
 		glEnable(GL_PRIMITIVE_RESTART);
 		mHairVbo.drawElements( GL_LINE_STRIP , mHairVbo.getNumIndices() ); 
 		glDisable(GL_PRIMITIVE_RESTART);
@@ -518,15 +505,15 @@ void ofApp::createVoxelGrid(float timeStep){
 	glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_R32F, GL_RED, GL_FLOAT, &zero );		
 	mDensityBuffer.unbind(GL_SHADER_STORAGE_BUFFER);
 
-	mCurrentVelocityBuffer.bind(GL_SHADER_STORAGE_BUFFER);
+	mVelocityBuffer.getWriteBuffer().bind(GL_SHADER_STORAGE_BUFFER);
 	glClearBufferData(GL_SHADER_STORAGE_BUFFER, GL_R32F, GL_RED, GL_FLOAT, &zero );		
-	mCurrentVelocityBuffer.unbind(GL_SHADER_STORAGE_BUFFER);
+	mVelocityBuffer.getWriteBuffer().unbind(GL_SHADER_STORAGE_BUFFER);
 
 	pushGlDebugGroup( "Fill Voxel Grid" ); 
 	
-	particlesBuffer.bindBase(GL_SHADER_STORAGE_BUFFER, 0);
+	mParticlesBuffer.bindBase(GL_SHADER_STORAGE_BUFFER, 0);
 	mDensityBuffer.bindBase( GL_SHADER_STORAGE_BUFFER,2);
-	mCurrentVelocityBuffer.bindBase( GL_SHADER_STORAGE_BUFFER,3); 
+	mVelocityBuffer.getWriteBuffer().bindBase( GL_SHADER_STORAGE_BUFFER,3); 
 
 	mVoxelComputeShaderFill.begin();
 	
@@ -543,10 +530,10 @@ void ofApp::createVoxelGrid(float timeStep){
 	mVoxelComputeShaderFill.end();
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT); // wait till we finished writing the voxelgrid
 
-	particlesBuffer.unbindBase(GL_SHADER_STORAGE_BUFFER,0); 
+	mParticlesBuffer.unbindBase(GL_SHADER_STORAGE_BUFFER,0); 
 	mDensityBuffer.unbindBase( GL_SHADER_STORAGE_BUFFER,2);
-	mCurrentVelocityBuffer.unbindBase( GL_SHADER_STORAGE_BUFFER,3);
-
+	mVelocityBuffer.getWriteBuffer().unbindBase( GL_SHADER_STORAGE_BUFFER,3);
+	mVelocityBuffer.swap();
 	popGlDebugGroup();
 		
 	pushGlDebugGroup( "Post-Process Voxel Grid" ); 
@@ -562,7 +549,7 @@ void ofApp::createVoxelGrid(float timeStep){
 	
 	mVoxelBuffer.bindBase(GL_SHADER_STORAGE_BUFFER,1);
 	mDensityBuffer.bindBase( GL_SHADER_STORAGE_BUFFER,2);
-	mCurrentVelocityBuffer.bindBase( GL_SHADER_STORAGE_BUFFER,3);
+	mVelocityBuffer.getReadBuffer().bindBase( GL_SHADER_STORAGE_BUFFER,3);
 	//mOldVelocityBuffer.bindBase( GL_SHADER_STORAGE_BUFFER,4);
 
 	glBindBufferBase( GL_UNIFORM_BUFFER , UniformBuffers::ConstVoxelGridData, mUbos[UniformBuffers::ConstVoxelGridData] ); 
@@ -576,7 +563,7 @@ void ofApp::createVoxelGrid(float timeStep){
 	
 	mVoxelBuffer.unbindBase(GL_SHADER_STORAGE_BUFFER,1);
 	mDensityBuffer.unbindBase( GL_SHADER_STORAGE_BUFFER,2);
-	mCurrentVelocityBuffer.unbindBase( GL_SHADER_STORAGE_BUFFER,3);
+	mVelocityBuffer.getReadBuffer().unbindBase( GL_SHADER_STORAGE_BUFFER,3);
 	//mOldVelocityBuffer.unbindBase( GL_SHADER_STORAGE_BUFFER,4);
 	
 	// velocity is written to oldbuffer 
