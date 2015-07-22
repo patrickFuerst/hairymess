@@ -29,14 +29,11 @@ struct Voxel{
 layout(std140, binding=0) buffer particle{
     Particle g_particles[];
 };
-volatile layout(std140, binding=1) buffer voxel{
-    Voxel g_voxelGrid[];
-};
 
-layout(std140, binding=2) buffer density{
+volatile layout(std430, binding=2) buffer density{  // need to use std430 here, because with std140 types of array get aligned to vec4 
     float g_densityBuffer[];
 };
-layout(std140, binding=3) buffer velocity{
+volatile layout(std140, binding=3) buffer velocity{
     vec4 g_velocityBuffer[];
 };
 
@@ -195,18 +192,18 @@ void insertVelocity( const vec4 position ,  const vec4 velocity){
 	
 }
 
-// void insertDensity( const vec4 position ,   const float value){
+void insertDensity( const vec4 position ,   const float value){
 
-// 	// position in Voxelgrid space 
-// 	vec4 scaledPosition = (position - vec4( g_modelTranslation.xyz, 0.0) ) / vec4((g_maxBB.xyz - g_minBB.xyz),1) + 0.5;
-// 	scaledPosition *= g_gridSize; 
-// 	vec3 cellIndex = floor( scaledPosition.xyz  ); 
+	// position in Voxelgrid space 
+	vec4 scaledPosition = (position - vec4( g_modelTranslation.xyz, 0.0) ) / vec4((g_maxBB.xyz - g_minBB.xyz),1) + 0.5;
+	scaledPosition *= g_gridSize; 
+	vec3 cellIndex = floor( scaledPosition.xyz  ); 
 
-// 	vec3 delta = scaledPosition.xyz - cellIndex; 
+	vec3 delta = scaledPosition.xyz - cellIndex; 
 
-// 	atomicAdd(g_voxelGrid[ voxelIndex(cellIndex.x, cellIndex.y, cellIndex.z ) ].density, value ) ; 
+	atomicAdd(g_densityBuffer[ voxelIndex(cellIndex.x, cellIndex.y, cellIndex.z ) ], value ) ; 
 	
-// }
+}
 
 void main(){
 	
@@ -214,13 +211,8 @@ void main(){
 	const vec4 position =  g_particles[gl_GlobalInvocationID.x].pos;
 	const vec4 velocity =  g_particles[gl_GlobalInvocationID.x].vel;
 
-	// const int voxelIndex = voxelIndex( position );
-	// g_voxelGrid[voxelIndex].density = 0.5;
-
 	// TODO optimise both to one method
 	trilinearInsertDensity2( position, 1.0 ); // for every particle adds a density of one
-	
-	//trilinearInsertDensity2( position, 1.0 ); 
 	trilinearInsertVelocity( position , velocity);
 //	insertDensity( position , 1.0 );
 //	insertVelocity( position, velocity ); 

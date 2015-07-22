@@ -120,7 +120,7 @@ void main(){
 
 
 
-	const int voxelIndex = voxelIndex( oldPosition ); 
+//	const int voxelIndex = voxelIndex( oldPosition ); 
 
 	// const vec4 interpolatedVelocity = trilinearVelocityInterpolation( oldPosition ); 
 	

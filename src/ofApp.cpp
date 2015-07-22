@@ -210,18 +210,16 @@ void ofApp::setup(){
 
 	// VOXEL BUFFERS
 
-	mDensityBuffer.allocate( sizeof(float)* mVoxelGridSize * mVoxelGridSize * mVoxelGridSize, GL_STREAM_COPY);
-	mCurrentVelocityBuffer.allocate( sizeof(ofVec4f)* mVoxelGridSize * mVoxelGridSize * mVoxelGridSize, GL_STREAM_COPY);
-	mOldVelocityBuffer.allocate( sizeof(ofVec4f)* mVoxelGridSize * mVoxelGridSize * mVoxelGridSize, GL_STREAM_COPY);
-
-
-
 	mVoxelGridSize = VOXEL_GRID_SIZE;
+	
 	mVoxelBuffer.allocate( sizeof(Voxel) * mVoxelGridSize * mVoxelGridSize * mVoxelGridSize, GL_STREAM_COPY);
-	mVoxelBuffer.bindBase(GL_SHADER_STORAGE_BUFFER,1);
+	mDensityBuffer.allocate( sizeof(float)* mVoxelGridSize * mVoxelGridSize * mVoxelGridSize, GL_STREAM_COPY); 
+	mCurrentVelocityBuffer.allocate( sizeof(ofVec4f)* mVoxelGridSize * mVoxelGridSize * mVoxelGridSize, GL_STREAM_COPY);
+	//mOldVelocityBuffer.allocate( sizeof(ofVec4f)* mVoxelGridSize * mVoxelGridSize * mVoxelGridSize, GL_STREAM_COPY);
+
+	// just for debuging voxel grid
 	mVoxelVBO.setAttributeBuffer( VELOCITY , mCurrentVelocityBuffer, 4 , sizeof(ofVec4f), 0  ); // first attribute is velocity 
 	mVoxelVBO.setAttributeBuffer( GRADIENT , mVoxelBuffer, 4 , sizeof(Voxel), offsetof(Voxel, Voxel::gradient)  ); // second attribute is gradient 
-//	mVoxelVBO.setAttributeBuffer( DENSITY , mVoxelBuffer, 1 , sizeof(Voxel), offsetof(Voxel, Voxel::density) ); // third attribute is density  
 	mVoxelVBO.setAttributeBuffer( DENSITY , mDensityBuffer, 1 , sizeof(float), 0 ); // third attribute is density  
 
 
@@ -349,6 +347,9 @@ void ofApp::draw(){
 	
 
 	if( mDrawBoundingBox ){
+	
+		pushGlDebugGroup( "Draw BoundingBox" );
+		
 		ofNoFill();
 		ofVec3f position = ( mSimulationBoundingBox.max +  mSimulationBoundingBox.min) / 2.0f + mModelAnimation.getTranslation();
 		float width =  mSimulationBoundingBox.max.x -  mSimulationBoundingBox.min.x;
@@ -356,10 +357,14 @@ void ofApp::draw(){
 		float depth =  mSimulationBoundingBox.max.z - mSimulationBoundingBox.min.z;
 		ofDrawBox(position, width, height, depth ) ;
 		ofFill();
+
+		popGlDebugGroup();
 	
 	}
 	if( mDrawVoxelGrid ){
 		
+		pushGlDebugGroup( "Draw Voxel Grid" );
+
 
 		mVoxelGridShader.begin();
 
@@ -379,7 +384,7 @@ void ofApp::draw(){
 	
 		mVoxelGridShader.end();
 
-	
+		popGlDebugGroup();
 	}
 	
 	camera.end();
@@ -500,7 +505,8 @@ void ofApp::createVoxelGrid(float timeStep){
 
 
 	// clear buffer to write the new values 
-	const GLfloat zero = 0;
+	static const GLfloat zero = 0;
+	//const GLfloat half = 0.5;
 	
 	
 	
@@ -519,7 +525,6 @@ void ofApp::createVoxelGrid(float timeStep){
 	pushGlDebugGroup( "Fill Voxel Grid" ); 
 	
 	particlesBuffer.bindBase(GL_SHADER_STORAGE_BUFFER, 0);
-	mVoxelBuffer.bindBase(GL_SHADER_STORAGE_BUFFER,1);
 	mDensityBuffer.bindBase( GL_SHADER_STORAGE_BUFFER,2);
 	mCurrentVelocityBuffer.bindBase( GL_SHADER_STORAGE_BUFFER,3); 
 
@@ -539,13 +544,12 @@ void ofApp::createVoxelGrid(float timeStep){
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT); // wait till we finished writing the voxelgrid
 
 	particlesBuffer.unbindBase(GL_SHADER_STORAGE_BUFFER,0); 
-	mVoxelBuffer.unbindBase(GL_SHADER_STORAGE_BUFFER,1);
 	mDensityBuffer.unbindBase( GL_SHADER_STORAGE_BUFFER,2);
 	mCurrentVelocityBuffer.unbindBase( GL_SHADER_STORAGE_BUFFER,3);
 
 	popGlDebugGroup();
 		
-	pushGlDebugGroup( "Post-Proess Voxel Grid" ); 
+	pushGlDebugGroup( "Post-Process Voxel Grid" ); 
 
 	//TODO filter density grid!!
 	
@@ -554,13 +558,12 @@ void ofApp::createVoxelGrid(float timeStep){
 
 	// post process voxel grid - normalize velocity and create gradient of density field
 
-
 	mVoxelComputeShaderPostProcess.begin();
 	
 	mVoxelBuffer.bindBase(GL_SHADER_STORAGE_BUFFER,1);
 	mDensityBuffer.bindBase( GL_SHADER_STORAGE_BUFFER,2);
 	mCurrentVelocityBuffer.bindBase( GL_SHADER_STORAGE_BUFFER,3);
-	mOldVelocityBuffer.bindBase( GL_SHADER_STORAGE_BUFFER,4);
+	//mOldVelocityBuffer.bindBase( GL_SHADER_STORAGE_BUFFER,4);
 
 	glBindBufferBase( GL_UNIFORM_BUFFER , UniformBuffers::ConstVoxelGridData, mUbos[UniformBuffers::ConstVoxelGridData] ); 
 
@@ -574,11 +577,11 @@ void ofApp::createVoxelGrid(float timeStep){
 	mVoxelBuffer.unbindBase(GL_SHADER_STORAGE_BUFFER,1);
 	mDensityBuffer.unbindBase( GL_SHADER_STORAGE_BUFFER,2);
 	mCurrentVelocityBuffer.unbindBase( GL_SHADER_STORAGE_BUFFER,3);
-	mOldVelocityBuffer.unbindBase( GL_SHADER_STORAGE_BUFFER,4);
+	//mOldVelocityBuffer.unbindBase( GL_SHADER_STORAGE_BUFFER,4);
 	
 	// velocity is written to oldbuffer 
 	// using ping pong 
-	std::swap( mCurrentVelocityBuffer, mOldVelocityBuffer ); 
+	//std::swap( mCurrentVelocityBuffer, mOldVelocityBuffer ); 
 	
 	popGlDebugGroup();
 }

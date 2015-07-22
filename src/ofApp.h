@@ -132,7 +132,7 @@ class ofApp : public ofBaseApp{
 		int mVoxelGridSize; 
 
 		ofShader mVoxelGridShader;
-		ofVbo mVoxelVBO; 
+		ofVbo mVoxelVBO;  // just for drawing Voxelgrid  
 
 
 		ofShader mComputeShader;

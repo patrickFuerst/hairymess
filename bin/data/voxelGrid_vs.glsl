@@ -61,7 +61,7 @@ void main()
 	float heigthDelta = (g_maxBB.y  - g_minBB.y) / g_gridSize;  
 	float depthDelta = (g_maxBB.z  - g_minBB.z) / g_gridSize; 
 
-	// calculate voxel position from the verexID
+	// calculate voxel position from the vertexID
 	int voxelIndex_x = int(mod( gl_VertexID , g_gridSize)); 
 	int voxelIndex_z = int( mod(floor(gl_VertexID /  (g_gridSize) ), g_gridSize) ) ;
 	int voxelIndex_y = int(floor(gl_VertexID / (g_gridSize*g_gridSize))); 
@@ -75,9 +75,12 @@ void main()
 	
 	// just look at voxels which are not empty
 	// float alpha = density > 0.0 ? 1.0 : 0.0;
-	// Out.color  = vec4(density,density,density,alpha);
-
-	float alpha = length(gradient) > 0.0 ? 1.0 : 0.0; 
-	Out.color = vec4(gradient.xyz, alpha);
+	//  Out.color  = vec4(density,density,density,alpha);
+	
+	 float alpha = length(velocity.xyz)  > 0.0 ? 1.0 : 0.0;
+	  Out.color  = vec4(velocity.xyz,alpha);
+	
+	// float alpha = length(gradient) > 0.0 ? 1.0 : 0.0; 
+	// Out.color = vec4(gradient.xyz, alpha);
 }
 

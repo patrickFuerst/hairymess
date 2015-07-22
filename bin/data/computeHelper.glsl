@@ -165,7 +165,7 @@ vec4 verletIntegration(  vec4 position , vec4 previousPosition, vec4 force,  boo
 
 
 
-void updateParticle( vec4 pos, vec4 prevPos, vec4 vel, vec4 color  ){
+void updateParticle( const vec4 pos, const vec4 prevPos, const vec4 vel, const vec4 color  ){
 
 
 	p[gl_GlobalInvocationID.x].pos.xyz = pos.xyz;

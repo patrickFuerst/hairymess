@@ -16,7 +16,7 @@ subroutine(hairSimulationAlgorithm) void DFTLApproach( const uint localStrandInd
 	const vec4 oldPosition = position;
 
 	// calculate the velocity according to the ftl approach 
-	// first approach was to calculate it at the end and add it to the newVelocity. But this results to that this "guiding" velocity appears in the voxel grid and distorts the all other calculation
+	// first approach was to calculate it at the end and add it to the newVelocity. But this results to that this "guiding" velocity appears in the voxel grid and distorts the all other calculations
 	vec4 distanceToNext = vec4(0,0,0,0);
 	if(vertexIndexInStrand < g_numVerticesPerStrand-1){
 		distanceToNext.xyz = sharedPos[localVertexIndex].xyz - sharedPos[localVertexIndex+1].xyz ;
@@ -59,8 +59,9 @@ subroutine(hairSimulationAlgorithm) void DFTLApproach( const uint localStrandInd
 
 	}
 
-vec3 planePosition = vec3(0,0,0);
+	vec3 planePosition = vec3(0,0,0);
 	vec3 planeNormal = vec3(0,1,0);
+	
 	if( calculatePlaneCollision( oldPosition, sharedPos[localVertexIndex] ,  planePosition, planeNormal, collisionPoint ) ){
 
 		// bounce particle on surface of sphere 
