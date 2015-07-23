@@ -19,18 +19,14 @@ struct Particle{
 };
 
 
-struct Voxel{
-	//vec4 velocity;
-	vec4 gradient;
-	//float density; // could be int
-};
+
 
 layout(std140, binding=0) buffer particle{
     Particle p[];
 };
 
-layout(std140, binding=1) buffer voxel{
-    Voxel g_voxelGrid[];
+layout(std140, binding=1) buffer gradient{
+    vec4 g_gradientBuffer[];
 };
 
 layout(std140, binding=3) buffer velocity{
@@ -118,20 +114,6 @@ void main(){
 	
 	memoryBarrierShared();
 
-
-
-//	const int voxelIndex = voxelIndex( oldPosition ); 
-
-	// const vec4 interpolatedVelocity = trilinearVelocityInterpolation( oldPosition ); 
-	
-	// //const vec4 gridVelocity = g_voxelGrid[ voxelIndex ].velocity; 
-	// // friction 
-	// velocity =  (1.0 - g_friction ) * velocity + g_friction * (interpolatedVelocity ); 
-
-	// // repulsion
-	// const vec4 gridGradient = trilinearGradientInterpolation(oldPosition) ;
-	// //velocity = velocity + g_repulsion * vec4(gridGradient.xyz,0.0)/g_timeStep; // this one for normalize gradient 
-	// velocity = velocity + g_repulsion * vec4(gridGradient.xyz,0.0) * g_timeStep; // this one for non normalize gradient
 
 	simulationAlgorithm(localStrandIndex, localVertexIndex, globalStrandIndex, vertexIndexInStrand, oldPosition, prevPosition, velocity, color, force);
 	

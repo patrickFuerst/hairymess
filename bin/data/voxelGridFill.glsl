@@ -20,12 +20,6 @@ struct Particle{
 	bool fix;
 };
 
-struct Voxel{
-	//vec4 velocity; 
-	vec4 gradient; 
-	//float density; // could be int
-};
-
 layout(std140, binding=0) buffer particle{
     Particle g_particles[];
 };

@@ -10,15 +10,8 @@
 #define CONST_VOXEL_GRID_DATA_BINDING 4
 
 
-struct Voxel{
-	//vec4 velocity; 
-	vec4 gradient; 
-	//float density; // could be int
-};
-
-
-layout(std140, binding=1) buffer voxel{
-    Voxel g_voxelGrid[];
+layout(std140, binding=1) buffer gradient{
+    vec4 g_gradientBuffer[];
 };
 
 layout(std430, binding=2) buffer density{ // need to use std430 here, because with std140 types of array get aligned to vec4 
@@ -29,9 +22,7 @@ layout(std140, binding=3) buffer velocity{
     vec4 g_velocityBuffer[];
 };
 
-// layout(std140, binding=4) buffer velocity2{
-//     vec4 g_velocityBufferNew[];
-// };
+
 
 
 layout( std140, binding = CONST_VOXEL_GRID_DATA_BINDING ) uniform ConstVoxelGridData{
@@ -46,6 +37,12 @@ layout(local_size_x = LOCAL_GROUP_SIZE, local_size_y = LOCAL_GROUP_SIZE, local_s
 int  voxelIndex( const float x, const float y, const float z ) {
 
 	return int(floor(x ) + floor(y ) * g_gridSize* g_gridSize  + floor(z ) *  g_gridSize);
+
+}
+
+int  voxelIndex( const int x, const int y, const int z ) {
+
+	return x + y  * g_gridSize* g_gridSize  + z *  g_gridSize;
 
 }
 
@@ -94,16 +91,6 @@ const vec3 calculateDensityGradient(){
 }
 
 
-void lowPassFilterVelocity(){
-
-	const mat3 filterKernel = mat3(1) * 1.0/9.0;
-
-
-
-
-
-}
-
 void main(){
 	
 	
@@ -116,21 +103,20 @@ void main(){
 		g_velocityBuffer[voxelIndex].xyz /= density; 
 	}
 
-
 	// calculate gradient 
 	const vec3 gradient  = calculateDensityGradient();
 	
 	#ifdef NORMALIZED_GRADIENT
-		// if we use this gradiet acts more like a position offset and values for repulsion need to be very low 
+		// if we use this, gradient acts more like a position offset and values for repulsion need to be very low 
 		// better results with non-normalized gradient
 		const float len = length(gradient); 
 		if( len > 0.0)
-			g_voxelGrid[voxelIndex].gradient.xyz = normalize(gradient); // normalized gradient
+			g_gradientBuffer[voxelIndex].xyz = normalize(gradient); // normalized gradient
 		else
-			g_voxelGrid[voxelIndex].gradient = vec4(0);
+			g_gradientBuffer[voxelIndex] = vec4(0);
 	#else
 	
-		g_voxelGrid[voxelIndex].gradient.xyz = gradient; // not normalized gradient
+		g_gradientBuffer[voxelIndex].xyz = gradient; // not normalized gradient
 	#endif
 }
 

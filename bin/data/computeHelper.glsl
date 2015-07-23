@@ -207,7 +207,7 @@ vec4 getGradient( const float x, const float y, const float z ){
 	if (z < 0 || z >= g_gridSize) return vec4(0); 
 	
 	const int index = voxelIndex(x, y, z );
-	return g_voxelGrid[ index ].gradient;
+	return g_gradientBuffer[ index ];
 	
 }
 
@@ -255,7 +255,6 @@ vec4 calculateFrictionAndRepulsionVelocityCorrection( vec4 velocity, vec4 positi
 
 	const vec4 interpolatedVelocity = trilinearVelocityInterpolation( position ); 
 	
-	//const vec4 gridVelocity = g_voxelGrid[ voxelIndex ].velocity; 
 	// friction 
 	velocity =  (1.0 - g_friction ) * velocity + g_friction * (interpolatedVelocity ); 
 

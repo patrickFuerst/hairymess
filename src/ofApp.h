@@ -142,7 +142,7 @@ class ofApp : public ofBaseApp{
 
 		GLuint mUbos[UniformBuffers::Size]; 
 
-		ofShader mVoxelComputeShaderFill, mVoxelComputeShaderPostProcess, mVoxelComputeShaderDiffuse; 
+		ofShader mVoxelComputeShaderFill, mVoxelComputeShaderPostProcess, mVoxelComputeShaderFilter; 
 		int mVoxelGridSize; 
 
 		ofShader mVoxelGridShader;
@@ -155,8 +155,8 @@ class ofApp : public ofBaseApp{
 
 		ofShader mHairshader; 
 		vector<Particle> mParticles;
-		ofBufferObject mParticlesBuffer, mVoxelBuffer, mDensityBuffer;
-		PingPongBuffer mVelocityBuffer; 
+		ofBufferObject mParticlesBuffer,  mDensityBuffer;
+		PingPongBuffer mVelocityBuffer, mVoxelGradientBuffer; 
 
 		ofMesh mFurryMesh;
 		int mNumHairStands,  mNumParticles; ; 
@@ -190,6 +190,7 @@ class ofApp : public ofBaseApp{
 		// debug 
 		bool mReloadShaders; 
 		ofParameter<bool> mDrawBoundingBox; 
+		ofParameter<bool> mUseFilter; 
 		ofParameter<bool> mDrawVoxelGrid; 
 		ofParameter<bool> mDrawFur; 
 
