@@ -1,93 +1,17 @@
 #version 440
 
-#define LOCAL_GROUP_SIZE 8
 
+#pragma include "constants.h"
+#pragma include "bufferDefinitions.h" // include all, glsl opts-out the ones we don't need
+#pragma include "computeHelper.glsl"  // load after buffers are defined 
 
-#define SIMULATION_DATA_BINDING 0 
-#define CONST_SIMULATION_DATA_BINDING 1
-#define MODEL_DATA_BINDING 2
-#define VOXEL_GRID_DATA_BINDING 3 
-#define CONST_VOXEL_GRID_DATA_BINDING 4
-
-
-
-layout(std140, binding=1) buffer gradient{
-    vec4 g_gradientBuffer[];
-};
-
-layout(std140, binding=2) buffer gradient2{
-    vec4 g_gradientBufferWrite[];
-};
-layout(std140, binding=3) buffer velocity{
-    vec4 g_velocityBuffer[];
-};
-
-layout(std140, binding=4) buffer velocity2{
-     vec4 g_velocityBufferWrite[];
- };
-
-
-layout( std140, binding = CONST_VOXEL_GRID_DATA_BINDING ) uniform ConstVoxelGridData{
-	vec4 g_minBB;
-	vec4 g_maxBB; 	
-	int g_gridSize;
-
-};
 
 layout(local_size_x = LOCAL_GROUP_SIZE, local_size_y = LOCAL_GROUP_SIZE, local_size_z = LOCAL_GROUP_SIZE) in;
 
-
 uniform int g_filterPass; 
 
-int  voxelIndex( const float x, const float y, const float z ) {
 
-	return int(floor(x ) + floor(y ) * g_gridSize* g_gridSize  + floor(z ) *  g_gridSize);
-
-}
-
-int  voxelIndex( const int x, const int y, const int z ) {
-
-	return x + y  * g_gridSize* g_gridSize  + z *  g_gridSize;
-
-}
-
-
-void lowPassFilterVelocity(){
-
-	const int kernelSizeHalf = 1; 
-	//const float[kernelSize] filterKernel = mat3(1) * 1.0/27.0;
-	const float  factor = 1.0/27.0;;
-	const uint x  = gl_GlobalInvocationID.x;
-	const uint y  = gl_GlobalInvocationID.y;
-	const uint z  = gl_GlobalInvocationID.z;
-
-	if( x >= g_gridSize  || y >= g_gridSize  || z >= g_gridSize ){
-		g_velocityBufferWrite[voxelIndex(x,y,z)] = g_velocityBuffer[voxelIndex(x,y,z)]; 
-
-		return; 
-	}
-	
-	if( x <= 0 || y  <= 0 || z <= 0){
-		g_velocityBufferWrite[voxelIndex(x,y,z)] = g_velocityBuffer[voxelIndex(x,y,z)]; 
-		return; 
-	}
-
-	vec4 value = vec4(0); 
-	for( int i = -kernelSizeHalf; i <= kernelSizeHalf; i++){
-		for( int j = -kernelSizeHalf; j <= kernelSizeHalf; j++){
-			for( int k = -kernelSizeHalf; k <= kernelSizeHalf; k++){
-
-				value += factor * g_velocityBuffer[voxelIndex(x+i,y+j,z+k)];
-			}
-		}
-	}
-
-	g_velocityBufferWrite[voxelIndex(x,y,z)] = value; 
-
-}
-
-
-void lowPassFilterGradient(){
+void lowPassFilter(){
 
 	const int kernelSize = 3;
 	const int kernelSizeHalf = int(floor(kernelSize/2.0));
@@ -133,8 +57,7 @@ void main(){
 	
 	
 	// filter velocity 
-	//lowPassFilterVelocity();
-	lowPassFilterGradient();
+	lowPassFilter();
 
 	// const uint x  = gl_GlobalInvocationID.x;
 	// const uint y  = gl_GlobalInvocationID.y;

@@ -9,9 +9,6 @@
 precision highp float;
 precision highp int;
 
-
-
-
 in block
 {
 	vec4 color;

@@ -46,7 +46,7 @@ class ofApp : public ofBaseApp{
 		void gotMessage(ofMessage msg);
 		
 		// hair stuff
-		void createVoxelGrid( float timeStep);
+		void fillVoxelGrid( float timeStep);
 		AABB calculateBoundingBox( ofMesh &mesh, float hairlength  );
 		void reloadShaders();
 		void updateUBO( float deltaTime);
@@ -67,7 +67,7 @@ class ofApp : public ofBaseApp{
 
 
 
-		/// Shader Storgae Buffers
+		/// Shader Storage Buffers
 		struct Particle{
 			ofVec4f pos;
 			ofVec4f prevPos;
@@ -76,14 +76,6 @@ class ofApp : public ofBaseApp{
 			int fixed;  // actually bool in glsl
 			int pad[3];  // struct in glsl is aligned to multiple of the biggest base alingment, here 16 , so offset of next is 64 not 52
 		};
-
-		struct Voxel{
-			//ofVec4f velocity;
-			ofVec4f gradient;
-			//float density; 
-			//int pad[3];
-		}; 
-
 
 		/// Uniform Buffer Objects structure
 
@@ -129,6 +121,7 @@ class ofApp : public ofBaseApp{
 
 		
 		struct UniformBuffers {  // struct helps us with scoping, because the names of data structs are the same
+			// can't use enum struct because doesn't support int conversion 
 			enum  
 			{
 				SimulationData = 0, 
@@ -139,40 +132,52 @@ class ofApp : public ofBaseApp{
 				Size
 			};
 		};
+		enum ShaderStorageBuffers  
+		{
+			ParticleData = 0, 
+			GradientReadData,
+			GradientWriteData,
+			VelocityReadData,
+			VelocityWriteData,
+			DensityData, 
+			Size
+		} ;
+	
 
+		// hair simulation
 		GLuint mUbos[UniformBuffers::Size]; 
+		GLuint mSubroutineUniforms[1];
 
-		ofShader mVoxelComputeShaderFill, mVoxelComputeShaderPostProcess, mVoxelComputeShaderFilter; 
+		ofShader mHairshader, mVoxelComputeShaderFill, mVoxelComputeShaderPostProcess, mVoxelComputeShaderFilter; 
 		int mVoxelGridSize; 
 
-		ofShader mVoxelGridShader;
-		ofVbo mVoxelVBO;  // just for drawing Voxelgrid  
-
-
-		ofShader mComputeShader;
+		ofShader mComputeShaderSimulation;
 		int mNumWorkGroups;
-		//ofShader mConstrainPerStrainComputeShader;
 
-		ofShader mHairshader; 
 		vector<Particle> mParticles;
 		ofBufferObject mParticlesBuffer,  mDensityBuffer;
 		PingPongBuffer mVelocityBuffer, mVoxelGradientBuffer; 
 
-		ofMesh mFurryMesh;
 		int mNumHairStands,  mNumParticles; ; 
 		AABB mSimulationBoundingBox; 
 
 		ofMatrix4x4 mModelAnimation, mModelAnimationPrevInversed;
 		ofQuaternion mModelOrientation; 
 
-		GLuint vaoID;
+
+		ofMesh mFurryMesh;
+		
 		ofEasyCam camera;
 		//ofCamera camera;
 		ofVbo mHairVbo;
 
 		ofVboMesh mFloor; 
 
-		
+		// debug Voxel grid 
+		ofShader mVoxelGridShader;
+		ofVbo mVoxelVBO; 
+
+		// gui
 		ofxPanel gui;
 		ofParameter<float> mVelocityDamping,  mStiffness, mFriction, mRepulsion ; 
 		ofParameterGroup mShaderUniforms;
@@ -185,7 +190,6 @@ class ofApp : public ofBaseApp{
 		// dynamic follow the leader constraint 
 		ofParameter<float> mFTLDistanceDamping;
 
-		GLuint subroutineUniforms[1];
 
 		// debug 
 		bool mReloadShaders; 

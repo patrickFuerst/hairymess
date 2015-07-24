@@ -1,3 +1,4 @@
+
 vec2 constrainMultiplier( bool fixed0 , bool fixed1){
 
 	if( fixed0 ){
@@ -15,7 +16,6 @@ vec2 constrainMultiplier( bool fixed0 , bool fixed1){
 	}
 
 }
-
 
 vec4  applyLengthConstraintDFTL(  vec4 pos0 ,  bool fixed0,  vec4 pos1,  bool fixed1,  float targetLength, float stiffness = 1.0){
 
@@ -41,7 +41,6 @@ void  applyLengthConstraint( inout vec4 pos0 , in bool fixed0, inout vec4 pos1, 
 	pos1.xyz -= multiplier[1] * delta * stiffness;
 
 }
-
 
 bool calculateSphereCollision( vec4 prevPosition, vec4 position, vec4 sphere, inout vec3 collisionPoint , inout vec3 normal ){
 
@@ -69,22 +68,15 @@ bool calculateSphereCollision( vec4 prevPosition, vec4 position, vec4 sphere, in
 		// normal = normalize( collisionPoint - spherePosition); 
 
 
-		// not correct easy approach
+		// not correct, easy approach
 		normal = normalize( position.xyz - spherePosition); 
 		collisionPoint = spherePosition + radius * normal; 
-
-
 
 		return true; 
 
 	}
-
-
 	return false; 
-
-
 }
-
 
 bool calculatePlaneCollision(const vec4 prevPosition, const vec4 position, const  vec3 planePosition ,const vec3 planeNormal, inout vec3 collisionPoint  ){
 
@@ -92,7 +84,6 @@ bool calculatePlaneCollision(const vec4 prevPosition, const vec4 position, const
 	const vec3 ray =  normalize(position.xyz - prevPosition.xyz);
 	
 	const float collisionFactor = dot((position.xyz - planePosition), planeNormal ); 
-	
 
 	// check if the new point lies behind the plane
 	if(  collisionFactor < 0  ){
@@ -105,28 +96,18 @@ bool calculatePlaneCollision(const vec4 prevPosition, const vec4 position, const
 		collisionPoint =  prevPosition.xyz +  delta  * ray;
 
 		return true; 
-
 	}
-
-
 	return false; 
-
-
 }
-
 
 void calculateIndices( inout uint localVertexIndex , inout uint localStrandIndex ,
 					 inout uint globalStrandIndex , inout uint vertexIndexInStrand,  uint numVerticesPerStrand, 
 					 uint numStrandsPerThreadGroup    ){
 
-
-
 	localVertexIndex = gl_LocalInvocationID.x; 
 	localStrandIndex = uint(floor(gl_LocalInvocationID.x /  numVerticesPerStrand));
 	globalStrandIndex = gl_WorkGroupID.x * numStrandsPerThreadGroup + localStrandIndex;
 	vertexIndexInStrand = gl_LocalInvocationID.x %  numVerticesPerStrand; 
-
-
 
 }
 
@@ -164,21 +145,9 @@ vec4 verletIntegration(  vec4 position , vec4 previousPosition, vec4 force,  boo
 }
 
 
-
-void updateParticle( const vec4 pos, const vec4 prevPos, const vec4 vel, const vec4 color  ){
-
-
-	p[gl_GlobalInvocationID.x].pos.xyz = pos.xyz;
-	p[gl_GlobalInvocationID.x].prevPos.xyz = prevPos.xyz;
-	p[gl_GlobalInvocationID.x].vel.xyz = vel.xyz;
-	p[gl_GlobalInvocationID.x].color = color;
-}
-
-
 int  voxelIndex( const float x, const float y, const float z ) {
 
 	return int(floor(x ) + floor(y ) * g_gridSize* g_gridSize  + floor(z ) *  g_gridSize);
-
 }
 
 int  voxelIndex( const vec4 position ) {
@@ -189,79 +158,8 @@ int  voxelIndex( const vec4 position ) {
 	return voxelIndex( scaledPosition.x, scaledPosition.y, scaledPosition.z);
 }
 
-vec4 getVelocity( const float x, const float y, const float z ){
+int  voxelIndex( const int x, const int y, const int z ) {
 
-	if (x < 0 || x >= g_gridSize) return vec4(0);
-	if (y < 0 || y >= g_gridSize) return vec4(0); 
-	if (z < 0 || z >= g_gridSize) return vec4(0); 
-	
-	const int index = voxelIndex(x, y, z );
-	return g_velocityBuffer[ index ];
-	
+	return x + y  * g_gridSize* g_gridSize  + z *  g_gridSize;
 }
 
-vec4 getGradient( const float x, const float y, const float z ){
-
-	if (x < 0 || x >= g_gridSize) return vec4(0);
-	if (y < 0 || y >= g_gridSize) return vec4(0); 
-	if (z < 0 || z >= g_gridSize) return vec4(0); 
-	
-	const int index = voxelIndex(x, y, z );
-	return g_gradientBuffer[ index ];
-	
-}
-
-vec4 trilinearVelocityInterpolation( const vec4 position ){
-
-	// position in Voxelgrid space 
-	vec4 scaledPosition = (position - vec4( g_modelTranslation.xyz, 0.0) ) / vec4((g_maxBB.xyz - g_minBB.xyz),1) + 0.5;
-	scaledPosition *= g_gridSize; 
-	vec3 cellIndex = floor( scaledPosition.xyz  ); 
-	vec3 delta = scaledPosition.xyz - cellIndex; 
-
-	return getVelocity(cellIndex.x, cellIndex.y, cellIndex.z )  * (1.0 - delta.x) * (1.0 - delta.y ) * (1.0 - delta.z) +
-	getVelocity(cellIndex.x, cellIndex.y, cellIndex.z + 1 ) * (1.0 - delta.x) * (1.0 - delta.y ) *  delta.z +
-	getVelocity(cellIndex.x, cellIndex.y + 1 , cellIndex.z )  * (1.0 - delta.x) * delta.y * (1.0 - delta.z) +
-	getVelocity(cellIndex.x, cellIndex.y + 1, cellIndex.z + 1 ) * (1.0 - delta.x) *  delta.y *  delta.z +
-	getVelocity(cellIndex.x + 1, cellIndex.y, cellIndex.z ) * delta.x * (1.0 - delta.y ) * (1.0 - delta.z) + 
-	getVelocity(cellIndex.x + 1, cellIndex.y, cellIndex.z + 1  ) * delta.x * (1.0 - delta.y ) * delta.z +
-	getVelocity(cellIndex.x + 1, cellIndex.y + 1, cellIndex.z ) * delta.x * delta.y * (1.0 - delta.z) +
-	getVelocity(cellIndex.x + 1, cellIndex.y + 1, cellIndex.z  + 1) *  delta.x * delta.y * delta.z;
-
-
-}
-
-vec4 trilinearGradientInterpolation( const vec4 position ){
-
-	// position in Voxelgrid space 
-	vec4 scaledPosition = (position - vec4( g_modelTranslation.xyz, 0.0) ) / vec4((g_maxBB.xyz - g_minBB.xyz),1) + 0.5;
-	scaledPosition *= g_gridSize; 
-	vec3 cellIndex = floor( scaledPosition.xyz  ); 
-	vec3 delta = scaledPosition.xyz - cellIndex; 
-
-	return getGradient(cellIndex.x, cellIndex.y, cellIndex.z )  * (1.0 - delta.x) * (1.0 - delta.y ) * (1.0 - delta.z) +
-	getGradient(cellIndex.x, cellIndex.y, cellIndex.z + 1 ) * (1.0 - delta.x) * (1.0 - delta.y ) *  delta.z +
-	getGradient(cellIndex.x, cellIndex.y + 1 , cellIndex.z )  * (1.0 - delta.x) * delta.y * (1.0 - delta.z) +
-	getGradient(cellIndex.x, cellIndex.y + 1, cellIndex.z + 1 ) * (1.0 - delta.x) *  delta.y *  delta.z +
-	getGradient(cellIndex.x + 1, cellIndex.y, cellIndex.z ) * delta.x * (1.0 - delta.y ) * (1.0 - delta.z) + 
-	getGradient(cellIndex.x + 1, cellIndex.y, cellIndex.z + 1  ) * delta.x * (1.0 - delta.y ) * delta.z +
-	getGradient(cellIndex.x + 1, cellIndex.y + 1, cellIndex.z ) * delta.x * delta.y * (1.0 - delta.z) +
-	getGradient(cellIndex.x + 1, cellIndex.y + 1, cellIndex.z  + 1) *  delta.x * delta.y * delta.z;
-
-
-}
-
-vec4 calculateFrictionAndRepulsionVelocityCorrection( vec4 velocity, vec4 position){
-
-	const vec4 interpolatedVelocity = trilinearVelocityInterpolation( position ); 
-	
-	// friction 
-	velocity =  (1.0 - g_friction ) * velocity + g_friction * (interpolatedVelocity ); 
-
-	// repulsion
-	const vec4 gridGradient = trilinearGradientInterpolation(position) ;
-	//velocity = velocity + g_repulsion * vec4(gridGradient.xyz,0.0)/g_timeStep; // this one for normalize gradient 
-	velocity = velocity + g_repulsion * vec4(gridGradient.xyz,0.0) * g_timeStep; // this one for non normalize gradient
-	return velocity; 
-
-}

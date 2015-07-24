@@ -1,4 +1,7 @@
-#version 440 core
+#version 440 
+
+#pragma include "constants.h"
+
 
 #define POSITION	0
 #define COLOR		1
@@ -9,14 +12,6 @@
 #define GRADIENT 5
 #define DENSITY 6 
 
-#define SIMULATION_DATA_BINDING 0 
-#define CONST_SIMULATION_DATA_BINDING 1
-#define MODEL_DATA_BINDING 2
-#define VOXEL_GRID_DATA_BINDING 3 
-#define CONST_VOXEL_GRID_DATA_BINDING 4
-
-precision highp float;
-precision highp int;
 
 layout(location = VELOCITY) in vec4 velocity;
 layout(location = GRADIENT) in vec4 gradient ;
@@ -41,7 +36,6 @@ layout( std140, binding = MODEL_DATA_BINDING ) uniform ModelData{
 	vec4 g_modelTranslation; 
 
 };
-
 
 
 out block

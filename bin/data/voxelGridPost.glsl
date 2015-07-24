@@ -1,50 +1,11 @@
 #version 440
 
-#define LOCAL_GROUP_SIZE 8
+#pragma include "constants.h"
+#pragma include "bufferDefinitions.h" // include all, glsl opts-out the ones we don't need
+#pragma include "computeHelper.glsl"  // load after buffers are defined 
 
-
-#define SIMULATION_DATA_BINDING 0 
-#define CONST_SIMULATION_DATA_BINDING 1
-#define MODEL_DATA_BINDING 2
-#define VOXEL_GRID_DATA_BINDING 3 
-#define CONST_VOXEL_GRID_DATA_BINDING 4
-
-
-layout(std140, binding=1) buffer gradient{
-    vec4 g_gradientBuffer[];
-};
-
-layout(std430, binding=2) buffer density{ // need to use std430 here, because with std140 types of array get aligned to vec4 
-    float g_densityBuffer[];
-};
-
-layout(std140, binding=3) buffer velocity{
-    vec4 g_velocityBuffer[];
-};
-
-
-
-
-layout( std140, binding = CONST_VOXEL_GRID_DATA_BINDING ) uniform ConstVoxelGridData{
-	vec4 g_minBB;
-	vec4 g_maxBB; 	
-	int g_gridSize;
-
-};
 
 layout(local_size_x = LOCAL_GROUP_SIZE, local_size_y = LOCAL_GROUP_SIZE, local_size_z = LOCAL_GROUP_SIZE) in;
-
-int  voxelIndex( const float x, const float y, const float z ) {
-
-	return int(floor(x ) + floor(y ) * g_gridSize* g_gridSize  + floor(z ) *  g_gridSize);
-
-}
-
-int  voxelIndex( const int x, const int y, const int z ) {
-
-	return x + y  * g_gridSize* g_gridSize  + z *  g_gridSize;
-
-}
 
 const float getDensityX( const uint x){
 	const int voxelIndex = voxelIndex( x, gl_GlobalInvocationID.y, gl_GlobalInvocationID.z );
@@ -58,7 +19,6 @@ const float getDensityZ( const uint z){
 	const int voxelIndex = voxelIndex( gl_GlobalInvocationID.x, gl_GlobalInvocationID.y, z );
 	return g_densityBuffer[voxelIndex];
 }
-
 
 const vec3 calculateDensityGradient(){
 	
@@ -90,7 +50,6 @@ const vec3 calculateDensityGradient(){
 
 }
 
-
 void main(){
 	
 	
@@ -100,7 +59,7 @@ void main(){
 	// normalize velocity 
 	if( density > 0.0){
 		//	g_velocityBufferNew[voxelIndex] = vec4(0,0,0,0); 
-		g_velocityBuffer[voxelIndex].xyz /= density; 
+		g_velocityBufferWrite[voxelIndex].xyz /= density; 
 	}
 
 	// calculate gradient 
@@ -111,12 +70,12 @@ void main(){
 		// better results with non-normalized gradient
 		const float len = length(gradient); 
 		if( len > 0.0)
-			g_gradientBuffer[voxelIndex].xyz = normalize(gradient); // normalized gradient
+			g_gradientBufferWrite[voxelIndex].xyz = normalize(gradient); // normalized gradient
 		else
-			g_gradientBuffer[voxelIndex] = vec4(0);
+			g_gradientBufferWrite[voxelIndex] = vec4(0);
 	#else
 	
-		g_gradientBuffer[voxelIndex].xyz = gradient; // not normalized gradient
+		g_gradientBufferWrite[voxelIndex].xyz = gradient; // not normalized gradient
 	#endif
 }
 
