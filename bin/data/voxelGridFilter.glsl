@@ -13,18 +13,19 @@ uniform int g_filterPass;
 
 void lowPassFilter(){
 
-	const int kernelSize = 3;
-	const int kernelSizeHalf = int(floor(kernelSize/2.0));
+	const int kernelSize                   = 3;
+	const int kernelSizeHalf               = int(floor(kernelSize/2.0));
 	//const float[kernelSize] filterKernel = {0.0508822, 0.211839,  0.474559, 0.211839,0.0508822 };
-	const float kernel = 1.0/kernelSize;
-	const float[kernelSize] filterKernel = {kernel, kernel, kernel};
-	const uint x  = gl_GlobalInvocationID.x;
-	const uint y  = gl_GlobalInvocationID.y;
-	const uint z  = gl_GlobalInvocationID.z;
+	const float kernel                     = 1.0/kernelSize;
+	const float[kernelSize] filterKernel   = {kernel, kernel, kernel};
+	const uint x                           = gl_GlobalInvocationID.x;
+	const uint y                           = gl_GlobalInvocationID.y;
+	const uint z                           = gl_GlobalInvocationID.z;
 
 	vec4 gradientValue = vec4(0); 
 	vec4 velocityValue = vec4(0); 
-	uint index = 0;
+	uint index         = 0;
+	
 	if(  g_filterPass == 0){
 		for( int i = 0; i < kernelSize; i++){
 			index = x - kernelSizeHalf + i;

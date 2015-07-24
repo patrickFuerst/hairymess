@@ -17,13 +17,14 @@ vec2 constrainMultiplier( bool fixed0 , bool fixed1){
 
 }
 
+
 vec4  applyLengthConstraintDFTL(  vec4 pos0 ,  bool fixed0,  vec4 pos1,  bool fixed1,  float targetLength, float stiffness = 1.0){
 
-	vec3 delta = pos1.xyz - pos0.xyz; 
-	float distance = max( length( delta ), 1e-7);
-	float stretching  = 1.0 - targetLength / distance; 
-	delta = stretching * delta; 
-	vec2 multiplier = constrainMultiplier(fixed0, fixed1);
+	vec3 delta       = pos1.xyz - pos0.xyz; 
+	float distance   = max( length( delta ), 1e-7);
+	float stretching = 1.0 - targetLength / distance; 
+	delta            = stretching * delta; 
+	vec2 multiplier  = constrainMultiplier(fixed0, fixed1);
 
 	return vec4(pos1.xyz - 1.0 * delta * stiffness,1.0);
 
@@ -31,14 +32,14 @@ vec4  applyLengthConstraintDFTL(  vec4 pos0 ,  bool fixed0,  vec4 pos1,  bool fi
 
 void  applyLengthConstraint( inout vec4 pos0 , in bool fixed0, inout vec4 pos1, in bool fixed1,  float targetLength, float stiffness = 1.0){
 
-	vec3 delta = pos1.xyz - pos0.xyz; 
-	float distance = max( length( delta ), 1e-7);
-	float stretching  = 1.0 - targetLength / distance; 
-	delta = stretching * delta; 
-	vec2 multiplier = constrainMultiplier(fixed0, fixed1);
-
-	pos0.xyz += multiplier[0] * delta * stiffness;
-	pos1.xyz -= multiplier[1] * delta * stiffness;
+	vec3 delta       = pos1.xyz - pos0.xyz; 
+	float distance   = max( length( delta ), 1e-7);
+	float stretching = 1.0 - targetLength / distance; 
+	delta            = stretching * delta; 
+	vec2 multiplier  = constrainMultiplier(fixed0, fixed1);
+	
+	pos0.xyz         += multiplier[0] * delta * stiffness;
+	pos1.xyz         -= multiplier[1] * delta * stiffness;
 
 }
 
@@ -46,11 +47,10 @@ bool calculateSphereCollision( vec4 prevPosition, vec4 position, vec4 sphere, in
 
 
 	const vec3 spherePosition = sphere.xyz; 
-	const float radius = sphere.w;
-	
-	const vec3 collisionRay =  position.xyz - prevPosition.xyz;
-	const vec3 ppS = spherePosition - prevPosition.xyz; // previousPosition to sphere position ray
-	const vec3 pS = spherePosition - position.xyz;
+	const float radius        = sphere.w;
+	const vec3 collisionRay   =  position.xyz - prevPosition.xyz;
+	const vec3 ppS            = spherePosition - prevPosition.xyz; // previousPosition to sphere position ray
+	const vec3 pS             = spherePosition - position.xyz;
 	
 	// first check if the new point lies within the sphere 
 	if(  length(pS) < radius  ){
@@ -81,8 +81,7 @@ bool calculateSphereCollision( vec4 prevPosition, vec4 position, vec4 sphere, in
 bool calculatePlaneCollision(const vec4 prevPosition, const vec4 position, const  vec3 planePosition ,const vec3 planeNormal, inout vec3 collisionPoint  ){
 
 	
-	const vec3 ray =  normalize(position.xyz - prevPosition.xyz);
-	
+	const vec3 ray              =  normalize(position.xyz - prevPosition.xyz);
 	const float collisionFactor = dot((position.xyz - planePosition), planeNormal ); 
 
 	// check if the new point lies behind the plane
@@ -104,9 +103,9 @@ void calculateIndices( inout uint localVertexIndex , inout uint localStrandIndex
 					 inout uint globalStrandIndex , inout uint vertexIndexInStrand,  uint numVerticesPerStrand, 
 					 uint numStrandsPerThreadGroup    ){
 
-	localVertexIndex = gl_LocalInvocationID.x; 
-	localStrandIndex = uint(floor(gl_LocalInvocationID.x /  numVerticesPerStrand));
-	globalStrandIndex = gl_WorkGroupID.x * numStrandsPerThreadGroup + localStrandIndex;
+	localVertexIndex    = gl_LocalInvocationID.x; 
+	localStrandIndex    = uint(floor(gl_LocalInvocationID.x /  numVerticesPerStrand));
+	globalStrandIndex   = gl_WorkGroupID.x * numStrandsPerThreadGroup + localStrandIndex;
 	vertexIndexInStrand = gl_LocalInvocationID.x %  numVerticesPerStrand; 
 
 }
@@ -154,7 +153,7 @@ int  voxelIndex( const vec4 position ) {
 
 	// position in Voxelgrid space 
 	vec4 scaledPosition = (position - vec4( g_modelTranslation.xyz, 0.0) ) / vec4((g_maxBB.xyz - g_minBB.xyz),1) + 0.5;
-	scaledPosition *= g_gridSize; 
+	scaledPosition      *= g_gridSize; 
 	return voxelIndex( scaledPosition.x, scaledPosition.y, scaledPosition.z);
 }
 

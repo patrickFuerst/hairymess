@@ -53,7 +53,7 @@ void main()
 
 	float widthDelta  = (g_maxBB.x  - g_minBB.x) / g_gridSize; 
 	float heigthDelta = (g_maxBB.y  - g_minBB.y) / g_gridSize;  
-	float depthDelta = (g_maxBB.z  - g_minBB.z) / g_gridSize; 
+	float depthDelta  = (g_maxBB.z  - g_minBB.z) / g_gridSize; 
 
 	// calculate voxel position from the vertexID
 	int voxelIndex_x = int(mod( gl_VertexID , g_gridSize)); 

@@ -54,7 +54,7 @@ void main(){
 	
 	
 	const int voxelIndex = voxelIndex( gl_GlobalInvocationID.x, gl_GlobalInvocationID.y, gl_GlobalInvocationID.z );
-	const float density = g_densityBuffer[voxelIndex];
+	const float density  = g_densityBuffer[voxelIndex];
 
 	// normalize velocity 
 	if( density > 0.0){

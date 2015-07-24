@@ -61,9 +61,9 @@ vec4 trilinearVelocityInterpolation( const vec4 position ){
 
 	// position in Voxelgrid space 
 	vec4 scaledPosition = (position - vec4( g_modelTranslation.xyz, 0.0) ) / vec4((g_maxBB.xyz - g_minBB.xyz),1) + 0.5;
-	scaledPosition *= g_gridSize; 
-	vec3 cellIndex = floor( scaledPosition.xyz  ); 
-	vec3 delta = scaledPosition.xyz - cellIndex; 
+	scaledPosition      *= g_gridSize; 
+	vec3 cellIndex      = floor( scaledPosition.xyz  ); 
+	vec3 delta          = scaledPosition.xyz - cellIndex; 
 
 	return getVelocity(cellIndex.x, cellIndex.y, cellIndex.z )  * (1.0 - delta.x) * (1.0 - delta.y ) * (1.0 - delta.z) +
 	getVelocity(cellIndex.x, cellIndex.y, cellIndex.z + 1 ) * (1.0 - delta.x) * (1.0 - delta.y ) *  delta.z +
@@ -80,9 +80,9 @@ vec4 trilinearGradientInterpolation( const vec4 position ){
 
 	// position in Voxelgrid space 
 	vec4 scaledPosition = (position - vec4( g_modelTranslation.xyz, 0.0) ) / vec4((g_maxBB.xyz - g_minBB.xyz),1) + 0.5;
-	scaledPosition *= g_gridSize; 
-	vec3 cellIndex = floor( scaledPosition.xyz  ); 
-	vec3 delta = scaledPosition.xyz - cellIndex; 
+	scaledPosition      *= g_gridSize; 
+	vec3 cellIndex      = floor( scaledPosition.xyz  ); 
+	vec3 delta          = scaledPosition.xyz - cellIndex; 
 
 	return getGradient(cellIndex.x, cellIndex.y, cellIndex.z )  * (1.0 - delta.x) * (1.0 - delta.y ) * (1.0 - delta.z) +
 	getGradient(cellIndex.x, cellIndex.y, cellIndex.z + 1 ) * (1.0 - delta.x) * (1.0 - delta.y ) *  delta.z +
