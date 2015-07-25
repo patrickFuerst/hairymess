@@ -68,17 +68,25 @@ class ofApp : public ofBaseApp{
 
 
 		/// Shader Storage Buffers
-		struct Particle{
+		struct ParticleData{
 			ofVec4f pos;
 			ofVec4f prevPos;
-			ofVec4f vel;
-			ofFloatColor color;
-			int fixed;  // actually bool in glsl
+			ofVec4f vel; // not necessarily needed, could be derived from prevPos
+			ofFloatColor color; 
+			int fixed;  // actually bool in glsl,  could be encode to pos.w to save memory
 			int pad[3];  // struct in glsl is aligned to multiple of the biggest base alingment, here 16 , so offset of next is 64 not 52
+		};
+
+		// data per strand, maybe more later
+		struct StrandData{
+			float strandLength; 
+			int pad[3];  // we use std140 alignment so padding needs to be added
+
 		};
 
 		/// Uniform Buffer Objects structure
 
+	
 		struct SimulationData{ 
 			float velocityDamping;
 			int numIterationsPBD;
@@ -95,8 +103,7 @@ class ofApp : public ofBaseApp{
 			ofVec4f gravityForce;
 			int numVerticesPerStrand; 
 			int numStrandsPerThreadGroup;
-			float strandLength;	
-		
+
 		}mConstSimulationData;
 
 		struct ModelData{
@@ -132,16 +139,20 @@ class ofApp : public ofBaseApp{
 				Size
 			};
 		};
-		enum ShaderStorageBuffers  
-		{
-			ParticleData = 0, 
-			GradientReadData,
-			GradientWriteData,
-			VelocityReadData,
-			VelocityWriteData,
-			DensityData, 
-			Size
-		} ;
+		struct ShaderStorageBuffers {  // struct helps us with scoping, because the names of data structs are the same
+
+			enum   
+			{
+				ParticleData = 0, 
+				GradientReadData,
+				GradientWriteData,
+				VelocityReadData,
+				VelocityWriteData,
+				DensityData, 
+				StandData, 
+				Size
+			} ;
+		};
 	
 
 		// hair simulation
@@ -154,8 +165,9 @@ class ofApp : public ofBaseApp{
 		ofShader mComputeShaderSimulation;
 		int mNumWorkGroups;
 
-		vector<Particle> mParticles;
-		ofBufferObject mParticlesBuffer,  mDensityBuffer;
+		vector<ParticleData> mParticles; // let's keep them on cpu side if we refresh it 
+		vector<StrandData> mStrandData; // let's keep them on cpu side if we refresh it 
+		ofBufferObject mParticlesBuffer,  mDensityBuffer, mStrandDataBuffer;
 		PingPongBuffer mVelocityBuffer, mVoxelGradientBuffer; 
 
 		int mNumHairStands,  mNumParticles; ; 

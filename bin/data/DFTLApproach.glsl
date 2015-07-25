@@ -14,6 +14,7 @@ subroutine(hairSimulationAlgorithm) void DFTLApproach( const uint localStrandInd
 
 	
 	const vec4 oldPosition = position;
+	const float strandLength = sharedLength[localStrandIndex]; 
 
 	// calculate the velocity according to the ftl approach 
 	// first approach was to calculate it at the end and add it to the newVelocity. But this results to that this "guiding" velocity appears in the voxel grid and distorts the all other calculations
@@ -35,7 +36,7 @@ subroutine(hairSimulationAlgorithm) void DFTLApproach( const uint localStrandInd
 
 		for(int i= 0; i < g_numVerticesPerStrand-1; i++){
 			bool fix = sharedFixed[localVertexIndex+i+1];
-			sharedPos[localVertexIndex+i+1] = applyLengthConstraintDFTL( sharedPos[localVertexIndex+i], true, sharedPos[localVertexIndex+i+1], fix, g_strandLength/g_numVerticesPerStrand, g_stiffness);			
+			sharedPos[localVertexIndex+i+1] = applyLengthConstraintDFTL( sharedPos[localVertexIndex+i], true, sharedPos[localVertexIndex+i+1], fix, strandLength/g_numVerticesPerStrand, g_stiffness);			
 
 		}
 

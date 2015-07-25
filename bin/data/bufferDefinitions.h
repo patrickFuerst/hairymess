@@ -9,6 +9,9 @@ struct Particle{
 	bool fix;
 };
 
+struct StrandData{
+	float strandLength; 
+};
 
 // constants defined in computehelper.h
 layout(std140, binding = PARTICLE_DATA ) buffer particle{
@@ -35,6 +38,10 @@ layout(std430, binding = DESNITY_DATA ) buffer density{ // need to use std430 he
     float g_densityBuffer[];
 };
 
+layout(std140, binding = STRAND_DATA ) buffer strandData{ 
+    StrandData g_strandData[];
+};
+
 layout(std140, binding = SIMULATION_DATA_BINDING ) uniform SimulationData { 
 	float g_velocityDamping;
 	int g_numIterations;
@@ -50,8 +57,6 @@ layout( std140, binding = CONST_SIMULATION_DATA_BINDING ) uniform ConstSimulatio
 	vec4 g_gravityForce;
 	int g_numVerticesPerStrand; 
 	int g_numStrandsPerThreadGroup;
-	float g_strandLength;	
-
 };
 
 layout( std140, binding = MODEL_DATA_BINDING ) uniform ModelData{

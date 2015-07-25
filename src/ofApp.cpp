@@ -2,7 +2,8 @@
 #include "ofConstants.h"
 
 #define NUM_HAIR_PARTICLES 16   // number must not be bigger then WORK_GROUP_SIZE , current 32 max, because glsl for loop limited
-#define HAIR_LENGTH 2.0f
+#define MIN_HAIR_LENGTH 1.0f
+#define MAX_HAIR_LENGTH 8.0f
 
 #define WORK_GROUP_SIZE 64
 
@@ -78,10 +79,9 @@ void ofApp::updateUBO( float deltaTime ){
 	mVoxelGridData.deltaTime = deltaTime;
 
 	if(	!uboInit ){
-		mConstSimulationData.gravityForce = ofVec4f(0,-2,0,0);
+		mConstSimulationData.gravityForce = ofVec4f(0,-10,0,0);
 		mConstSimulationData.numVerticesPerStrand = NUM_HAIR_PARTICLES;
 		mConstSimulationData.numStrandsPerThreadGroup =   WORK_GROUP_SIZE / NUM_HAIR_PARTICLES;
-		mConstSimulationData.strandLength = HAIR_LENGTH;
 
 		mConstVoxelGridData.minBB = mSimulationBoundingBox.min;
 		mConstVoxelGridData.maxBB = mSimulationBoundingBox.max;
@@ -235,10 +235,12 @@ void ofApp::setup(){
 	camera.lookAt(ofVec3f(0,0,0));
 
 	mFloor = ofMesh::plane(30,30 );
-	mFurryMesh = ofMesh::sphere(4,200);
+	mFurryMesh = ofMesh::sphere(4,100);
 	mNumHairStands = mFurryMesh.getNumVertices();
 	mNumParticles = mNumHairStands * NUM_HAIR_PARTICLES;
+	
 	mParticles.resize(mNumParticles);
+	mStrandData.resize(mNumHairStands);
 
 	mNumWorkGroups = (( mNumParticles + (WORK_GROUP_SIZE-1))/ WORK_GROUP_SIZE);
 
@@ -249,19 +251,31 @@ void ofApp::setup(){
 	int index = 0;
 	int index2 = 0;
 
+	// create ParticleData 
+	// position along the normals of each vertex 
+	// root vertex is fixed
 	for (int i = 0; i <  mFurryMesh.getNumVertices(); i++)
 	{
+		float hairLength = MIN_HAIR_LENGTH  + ofRandom(1.0) * (MAX_HAIR_LENGTH - MIN_HAIR_LENGTH); 
+
+		ofFloatColor startColor, endColor;
+		if( i % 2 == 0){
+			startColor = ofFloatColor::greenYellow;
+			endColor = ofFloatColor::deepSkyBlue;
+		}else{
+			startColor = ofFloatColor::red;
+			endColor = ofFloatColor::black;
+		}
+
 		ofVec3f v = mFurryMesh.getVertex(i);
 		ofVec3f n = mFurryMesh.getNormal(i);
 		for (int j = 0; j < NUM_HAIR_PARTICLES; j++)
 		{
-			ofFloatColor startColor = ofFloatColor::greenYellow;
-			ofFloatColor endColor = ofFloatColor::deepSkyBlue;
-
+			
 			indices.at(index2) = index;
 
 			auto& p = mParticles.at(index);
-			p.pos = v + j* n * HAIR_LENGTH / NUM_HAIR_PARTICLES;
+			p.pos = v + j* n * hairLength / NUM_HAIR_PARTICLES;
 			p.pos.w = 1.0;
 			p.prevPos = p.pos;
 			p.vel.set(0,0,0,0);
@@ -271,6 +285,7 @@ void ofApp::setup(){
 			index2++;
 		}
 
+		mStrandData.at(i).strandLength  = hairLength; 
 		indices.at(index2) = restartIndex;
 		index2++;
 	}
@@ -282,9 +297,13 @@ void ofApp::setup(){
 	// PARTICLE BUFFER
 	mParticlesBuffer.allocate(mParticles,GL_DYNAMIC_DRAW);
 	mParticlesBuffer.bindBase(GL_SHADER_STORAGE_BUFFER, 0);
-	mHairVbo.setVertexBuffer(mParticlesBuffer,4,sizeof(Particle));
-	mHairVbo.setColorBuffer(mParticlesBuffer,  sizeof(Particle), offsetof(Particle, Particle::color) );
+	mHairVbo.setVertexBuffer(mParticlesBuffer,4,sizeof(ParticleData));
+	mHairVbo.setColorBuffer(mParticlesBuffer,  sizeof(ParticleData), offsetof(ParticleData, ParticleData::color) );
 	mHairVbo.setIndexData( indices.data() , indices.size() , GL_STATIC_DRAW );
+
+	// STRAND DATA BUFFER
+	mStrandDataBuffer.allocate(mStrandData, GL_STATIC_DRAW ); 
+
 
 	// enable and set the right restart index
 	glEnable(GL_PRIMITIVE_RESTART );
@@ -309,7 +328,7 @@ void ofApp::setup(){
 
 	createGui();
 
-	mSimulationBoundingBox = calculateBoundingBox( mFurryMesh, HAIR_LENGTH );
+	mSimulationBoundingBox = calculateBoundingBox( mFurryMesh, MAX_HAIR_LENGTH );
 	mDrawBoundingBox = false;
 }
 
@@ -345,6 +364,7 @@ void ofApp::update(){
 	mParticlesBuffer.bindBase(GL_SHADER_STORAGE_BUFFER, ShaderStorageBuffers::ParticleData);
 	mVoxelGradientBuffer.getReadBuffer().bindBase(GL_SHADER_STORAGE_BUFFER, ShaderStorageBuffers::GradientReadData );
 	mVelocityBuffer.getReadBuffer().bindBase( GL_SHADER_STORAGE_BUFFER, ShaderStorageBuffers::VelocityReadData );
+	mStrandDataBuffer.bindBase(GL_SHADER_STORAGE_BUFFER, ShaderStorageBuffers::StandData );
 
 	glBindBufferBase( GL_UNIFORM_BUFFER , UniformBuffers::SimulationData, mUbos[UniformBuffers::SimulationData] );
 	glBindBufferBase( GL_UNIFORM_BUFFER , UniformBuffers::ConstSimulationData, mUbos[UniformBuffers::ConstSimulationData] );
@@ -363,6 +383,7 @@ void ofApp::update(){
 	mParticlesBuffer.unbindBase(GL_SHADER_STORAGE_BUFFER, ShaderStorageBuffers::ParticleData);
 	mVoxelGradientBuffer.getReadBuffer().unbindBase(GL_SHADER_STORAGE_BUFFER, ShaderStorageBuffers::GradientReadData );
 	mVelocityBuffer.getReadBuffer().unbindBase( GL_SHADER_STORAGE_BUFFER, ShaderStorageBuffers::VelocityReadData );
+	mStrandDataBuffer.unbindBase(GL_SHADER_STORAGE_BUFFER, ShaderStorageBuffers::StandData );
 
 	mComputeShaderSimulation.end();
 

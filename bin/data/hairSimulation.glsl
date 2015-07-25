@@ -7,6 +7,7 @@
 
 shared vec4 sharedPos[LOCAL_GROUP_SIZE_X];
 shared bool sharedFixed[LOCAL_GROUP_SIZE_X];
+shared float sharedLength[LOCAL_GROUP_SIZE_X];
 
 subroutine void hairSimulationAlgorithm( const uint localStrandIndex,
 	const uint localVertexIndex,
@@ -125,6 +126,7 @@ void main(){
 	const vec4 velocity =   g_particles[gl_GlobalInvocationID.x].vel;
 
 	sharedFixed[localVertexIndex] = g_particles[gl_GlobalInvocationID.x].fix;
+	sharedLength[localStrandIndex] = g_strandData[globalStrandIndex].strandLength; 
 
 	vec4 force = g_gravityForce;
 	
