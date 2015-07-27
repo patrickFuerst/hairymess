@@ -281,7 +281,7 @@ void ofApp::setup(){
 			endColor = ofFloatColor::black;
 		}
 
-		ofVec3f v =  mAnimatedModel.getModelMatrix() * mFurryMesh.getVertex(i);
+		ofVec3f v =   mAnimatedModel.getMeshHelper(0).matrix * mAnimatedModel.getModelMatrix()  * mFurryMesh.getVertex(i);
 		ofVec3f n =  mFurryMesh.getNormal(i);
 		for (int j = 0; j < NUM_HAIR_PARTICLES; j++)
 		{
@@ -365,12 +365,12 @@ void ofApp::update(){
 	//ofMatrix4x4 modelAnimationMatrixDelta = mModelAnimation * mModelAnimationPrevInversed;
 	mModelAnimationPrevInversed = mModelAnimation.getInverse();
 
-	//static ofQuaternion first, second;
-	//first.makeRotate(0,0,0,0);
-	//second.makeRotate(180,1,1,0);
-	//mModelOrientation.slerp( sin(0.2f* ofGetElapsedTimef()), first, second);
+	static ofQuaternion first, second;
+	first.makeRotate(0,0,0,0);
+	second.makeRotate(180,1,1,0);
+	mModelOrientation.slerp( sin(0.2f* ofGetElapsedTimef()), first, second);
 	mModelAnimation.makeIdentityMatrix();
-	mModelAnimation = mAnimatedModel.getModelMatrix();
+	mModelAnimation = mAnimatedModel.getMeshHelper(0).matrix * mAnimatedModel.getModelMatrix() ;
 	//mModelAnimation.postMultRotate(mModelOrientation);
 	//mModelAnimation.setTranslation( ofVec3f( 0,4 + 5.0f*abs( sin( ofGetElapsedTimef() ) ), 0));
 
