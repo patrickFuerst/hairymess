@@ -3,6 +3,7 @@
 #include "ofMain.h"
 #include "ofBufferObject.h"
 
+#include "ofxAssimpModelLoader.h"
 #include "ofxGui.h"
 
 
@@ -34,7 +35,8 @@ class ofApp : public ofBaseApp{
 		void exit();
 
 		void drawFloor();
-		
+		void drawAnimatedMesh();
+
 		void keyPressed(int key);
 		void keyReleased(int key);
 		void mouseMoved(int x, int y );
@@ -103,6 +105,7 @@ class ofApp : public ofBaseApp{
 			ofVec4f gravityForce;
 			int numVerticesPerStrand; 
 			int numStrandsPerThreadGroup;
+			int numStrands; 
 
 		}mConstSimulationData;
 
@@ -150,6 +153,7 @@ class ofApp : public ofBaseApp{
 				VelocityWriteData,
 				DensityData, 
 				StandData, 
+				RootData,
 				Size
 			} ;
 		};
@@ -158,7 +162,7 @@ class ofApp : public ofBaseApp{
 		// hair simulation
 		GLuint mUbos[UniformBuffers::Size]; 
 		GLuint mSubroutineUniforms[1];
-
+		GLuint mRootBufferId; 
 		ofShader mHairshader, mVoxelComputeShaderFill, mVoxelComputeShaderPostProcess, mVoxelComputeShaderFilter; 
 		int mVoxelGridSize; 
 
@@ -168,7 +172,7 @@ class ofApp : public ofBaseApp{
 		vector<ParticleData> mParticles; // let's keep them on cpu side if we refresh it 
 		vector<StrandData> mStrandData; // let's keep them on cpu side if we refresh it 
 		ofBufferObject mParticlesBuffer,  mDensityBuffer, mStrandDataBuffer;
-		PingPongBuffer mVelocityBuffer, mVoxelGradientBuffer; 
+		PingPongBuffer mVoxelVelocityBuffer, mVoxelGradientBuffer; 
 
 		int mNumHairStands,  mNumParticles; ; 
 		AABB mSimulationBoundingBox; 
@@ -201,6 +205,9 @@ class ofApp : public ofBaseApp{
 
 		// dynamic follow the leader constraint 
 		ofParameter<float> mFTLDistanceDamping;
+
+		// animated model 
+		ofxAssimpModelLoader mAnimatedModel;
 
 
 		// debug 

@@ -39,7 +39,7 @@ out gl_PerVertex
 void main()
 {	
 	//gl_Position = modelViewProjectionMatrix * position ;
-	gl_Position =  modelViewProjectionMatrix * position;
+	gl_Position =  modelViewProjectionMatrix *  position;
 	Out.color  = color;
 }
 

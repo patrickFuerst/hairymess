@@ -47,32 +47,32 @@ subroutine(hairSimulationAlgorithm) void PBDApproach( const uint localStrandInde
 
 	vec4 sphere = vec4(0,0,0,4) + g_modelTranslation;
 	vec3 collisionPoint, normal; 
-	if( calculateSphereCollision( oldPosition, sharedPos[localVertexIndex] , sphere , collisionPoint, normal ) ){
+	// if( calculateSphereCollision( oldPosition, sharedPos[localVertexIndex] , sphere , collisionPoint, normal ) ){
 
-		// bounce particle on surface of sphere 
+	// 	// bounce particle on surface of sphere 
 
-		vec3 u = dot(newVelocity.xyz , normal ) * normal; 
-		vec3 w = velocity.xyz - u; 
-		newVelocity.xyz = w - u; 
-		sharedPos[localVertexIndex].xyz = collisionPoint;
+	// 	vec3 u = dot(newVelocity.xyz , normal ) * normal; 
+	// 	vec3 w = velocity.xyz - u; 
+	// 	newVelocity.xyz = w - u; 
+	// 	sharedPos[localVertexIndex].xyz = collisionPoint;
 
-	}
-
-
-	vec3 planePosition = vec3(0,0,0);
-	vec3 planeNormal = vec3(0,1,0);
-	if( calculatePlaneCollision( oldPosition, sharedPos[localVertexIndex] ,  planePosition, planeNormal, collisionPoint ) ){
-
-		// bounce particle on surface of sphere 
-
-		vec3 u = dot(newVelocity.xyz , planeNormal ) * planeNormal; 
-		vec3 w = velocity.xyz - u; 
-		//newVelocity.xyz = (w - u); 
-		sharedPos[localVertexIndex].xyz = collisionPoint;
-	}
+	// }
 
 
-	newVelocity = calculateFrictionAndRepulsionVelocityCorrection( newVelocity, sharedPos[localVertexIndex] );
+	// vec3 planePosition = vec3(0,0,0);
+	// vec3 planeNormal = vec3(0,1,0);
+	// if( calculatePlaneCollision( oldPosition, sharedPos[localVertexIndex] ,  planePosition, planeNormal, collisionPoint ) ){
+
+	// 	// bounce particle on surface of sphere 
+
+	// 	vec3 u = dot(newVelocity.xyz , planeNormal ) * planeNormal; 
+	// 	vec3 w = velocity.xyz - u; 
+	// 	//newVelocity.xyz = (w - u); 
+	// 	sharedPos[localVertexIndex].xyz = collisionPoint;
+	// }
+
+
+	//newVelocity = calculateFrictionAndRepulsionVelocityCorrection( newVelocity, sharedPos[localVertexIndex] );
 	
 	updateParticle(sharedPos[localVertexIndex], oldPosition, newVelocity, color );
 

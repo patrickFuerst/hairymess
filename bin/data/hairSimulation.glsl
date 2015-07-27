@@ -119,13 +119,24 @@ void main(){
 	
 	uint localStrandIndex, localVertexIndex, globalStrandIndex, vertexIndexInStrand; 
 	calculateIndices( localVertexIndex, localStrandIndex, globalStrandIndex,vertexIndexInStrand, g_numVerticesPerStrand,g_numStrandsPerThreadGroup );
-	
-	const vec4 oldPosition = sharedPos[localVertexIndex] = g_particles[gl_GlobalInvocationID.x].pos;
-	const vec4 prevPosition =   g_particles[gl_GlobalInvocationID.x].prevPos;
-	const vec4 color = g_particles[gl_GlobalInvocationID.x].color;
-	const vec4 velocity =   g_particles[gl_GlobalInvocationID.x].vel;
+	vec4 oldPosition, prevPosition,color, velocity ;
 
-	sharedFixed[localVertexIndex] = g_particles[gl_GlobalInvocationID.x].fix;
+	if(vertexIndexInStrand > 0 ){
+		  oldPosition = sharedPos[localVertexIndex] = g_particles[gl_GlobalInvocationID.x].pos;
+		  prevPosition =   g_particles[gl_GlobalInvocationID.x].prevPos;
+		  color = g_particles[gl_GlobalInvocationID.x].color;
+		  velocity =   g_particles[gl_GlobalInvocationID.x].vel;
+		  sharedFixed[localVertexIndex] = g_particles[gl_GlobalInvocationID.x].fix;
+
+	}else{
+		 oldPosition = sharedPos[localVertexIndex] = g_modelMatrix * vec4(vec3(g_rootParticles[globalStrandIndex].x,g_rootParticles[globalStrandIndex].y,g_rootParticles[globalStrandIndex].z),1.0); // workaround because looks like NVIDIA bug not packing vec3 right with std430
+		 prevPosition =  vec4(0);
+		 color = vec4(1);
+		 velocity =   vec4(0);
+		 sharedFixed[localVertexIndex] = true;
+
+
+	}
 	sharedLength[localStrandIndex] = g_strandData[globalStrandIndex].strandLength; 
 
 	vec4 force = g_gravityForce;

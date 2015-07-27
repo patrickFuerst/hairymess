@@ -111,9 +111,14 @@ void insertDensity( const vec4 position ,   const float value){
 
 void main(){
 	
+	vec4 position, velocity;
 
-	const vec4 position =  g_particles[gl_GlobalInvocationID.x].pos;
-	const vec4 velocity =  g_particles[gl_GlobalInvocationID.x].vel;
+
+
+	position =  g_particles[gl_GlobalInvocationID.x].pos;
+	velocity =  g_particles[gl_GlobalInvocationID.x].vel;
+
+
 
 	// TODO optimise both to one method
 	trilinearInsertDensity( position, 1.0 ); // for every particle adds a density of one

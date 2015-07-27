@@ -12,8 +12,16 @@ struct Particle{
 struct StrandData{
 	float strandLength; 
 };
+struct RootData{  // workaround because looks like NVIDIA bug not packing vec3 right with std430
+	float x, y, z;
+};
 
 // constants defined in computehelper.h
+layout(std430, binding = ROOT_DATA ) buffer rootParticle{
+    RootData g_rootParticles[];
+};
+
+
 layout(std140, binding = PARTICLE_DATA ) buffer particle{
     Particle g_particles[];
 };
@@ -57,6 +65,7 @@ layout( std140, binding = CONST_SIMULATION_DATA_BINDING ) uniform ConstSimulatio
 	vec4 g_gravityForce;
 	int g_numVerticesPerStrand; 
 	int g_numStrandsPerThreadGroup;
+	int g_numStrands; 
 };
 
 layout( std140, binding = MODEL_DATA_BINDING ) uniform ModelData{

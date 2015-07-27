@@ -118,9 +118,9 @@ vec4 positionIntegration( vec4 position, vec4 velocity, vec4 force, bool fix){
 
 	}else{
 
-		// first project it back to worldspace so rotations get handled properly
-		position.xyz = (g_modelMatrixPrevInverted * vec4(position.xyz,1.0)).xyz ;
-		position.xyz = (g_modelMatrix * vec4(position.xyz,1.0)).xyz ;
+		// first project it back to modelspace so rotations get handled properly
+		//position.xyz = (g_modelMatrixPrevInverted * vec4(position.xyz,1.0)).xyz ;
+		//position.xyz = (g_modelMatrix * vec4(position.xyz,1.0)).xyz ;
 
 	}
 	return position; 
