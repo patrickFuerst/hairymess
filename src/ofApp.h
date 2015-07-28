@@ -216,6 +216,7 @@ class ofApp : public ofBaseApp{
 		ofParameter<bool> mUseFilter; 
 		ofParameter<bool> mDrawVoxelGrid; 
 		ofParameter<bool> mDrawFur; 
+		ofParameter<bool> mPlayAnimation; 
 
 
 };

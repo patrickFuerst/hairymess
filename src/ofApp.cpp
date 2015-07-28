@@ -242,6 +242,7 @@ void ofApp::setup(){
 	mAnimatedModel.disableTextures();
 	mAnimatedModel.disableNormals();
 	mAnimatedModel.disableMaterials();
+
 	//mAnimatedModel.setPosition(0,0,0);
 	//mAnimatedModel.setScaleNormalization(100);
 	mAnimatedModel.setLoopStateForAllAnimations(OF_LOOP_NORMAL);
@@ -359,7 +360,9 @@ void ofApp::update(){
 	if( timeStep > 0.02)  // prevent to high timesteps at the beginning of the app start
 		timeStep = 0.02;
 
-	mAnimatedModel.update();
+
+	if( mPlayAnimation )
+		mAnimatedModel.update();
 
 
 	//ofMatrix4x4 modelAnimationMatrixDelta = mModelAnimation * mModelAnimationPrevInversed;
@@ -599,6 +602,7 @@ void ofApp::createGui(){
 	mDrawVoxelGrid.setName("Draw VoxelGrid");
 	mDrawFur.setName( "Draw Fur" );
 	mUseFilter.setName( "Use Filter" );
+	mPlayAnimation.setName( "Play Animation"); 
 
 	gui.add( &mPBDAlgorithm);
 	gui.add( &mDFTLAlgorithm);
@@ -606,6 +610,7 @@ void ofApp::createGui(){
 	gui.add( mDrawBoundingBox );
 	gui.add( mDrawVoxelGrid );
 	gui.add( mDrawFur );
+	gui.add( mPlayAnimation );
 	gui.add( mShaderUniforms);
 }
 
