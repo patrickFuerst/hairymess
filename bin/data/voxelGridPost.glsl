@@ -50,6 +50,8 @@ const vec3 calculateDensityGradient(){
 
 }
 
+//#define NORMALIZED_GRADIENT
+
 void main(){
 	
 	

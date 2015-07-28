@@ -71,6 +71,7 @@ void ofApp::updateUBO( float deltaTime ){
 	mSimulationData.repulsion = mRepulsion;
 	mSimulationData.ftlDamping = mFTLDistanceDamping;
 	mSimulationData.deltaTime = deltaTime;
+	mSimulationData.gravityForce = ofVec4f(mGravity);
 
 	mModelData.modelMatrix = mModelAnimation;
 	mModelData.modelMatrixPrevInverted = mModelAnimationPrevInversed;
@@ -79,7 +80,6 @@ void ofApp::updateUBO( float deltaTime ){
 	mVoxelGridData.deltaTime = deltaTime;
 
 	if(	!uboInit ){
-		mConstSimulationData.gravityForce = ofVec4f(0,-10,0,0);
 		mConstSimulationData.numVerticesPerStrand = NUM_HAIR_PARTICLES;
 		mConstSimulationData.numStrandsPerThreadGroup =   WORK_GROUP_SIZE / NUM_HAIR_PARTICLES;
 		mConstSimulationData.numStrands = mNumHairStands;
@@ -231,20 +231,21 @@ void ofApp::setup(){
 	ofSetLogLevel( OF_LOG_VERBOSE);
 	ofSetVerticalSync(false);
 	camera.setAutoDistance(false);
-	camera.setupPerspective(false,60,0.1,1000);
+	camera.setupPerspective(false,60,0.1,10000);
 	camera.setPosition(10,15,10);
 	camera.lookAt(ofVec3f(0,0,0));
 
 	mFloor = ofMesh::plane(30,30 );
 	
-	mAnimatedModel.loadModel("models/boyMerged.dae", true);
+	mAnimatedModel.loadModel("models/MutantWalking.dae", true);
 	mAnimatedModel.disableColors();
 	mAnimatedModel.disableTextures();
 	mAnimatedModel.disableNormals();
 	mAnimatedModel.disableMaterials();
 
-	//mAnimatedModel.setPosition(0,0,0);
-	//mAnimatedModel.setScaleNormalization(100);
+	mAnimatedModel.setPosition(0,0,0);
+//	mAnimatedModel.setScaleNormalization(0.001);
+	mAnimatedModel.setScale(0.01,-0.01,0.01);
 	mAnimatedModel.setLoopStateForAllAnimations(OF_LOOP_NORMAL);
 	mAnimatedModel.playAllAnimations();
 	mAnimatedModel.update();
@@ -418,6 +419,7 @@ void ofApp::update(){
 
 void ofApp::drawAnimatedMesh(){
 
+	ofSetColor(ofColor::black);
 	mAnimatedModel.drawFaces();
 	//mAnimatedModel.getMesh(2).draw();
 }
@@ -566,7 +568,7 @@ void ofApp::drawFloor(){
 	ofPopMatrix();
 
 	ofPopMatrix();
-
+	
 	glDisable(GL_STENCIL_TEST );
 }
 
@@ -590,7 +592,7 @@ void ofApp::createGui(){
 	mShaderUniforms.add( mNumConstraintIterations.set("numIterations", 25, 0,200));
 	mShaderUniforms.add( mStiffness.set("stiffness",1.0f, 0,1));
 	mShaderUniforms.add( mFriction.set("friction",0.1f, 0,1.0));
-	mShaderUniforms.add( mRepulsion.set("repulsion",0.1f, 0,5.0));
+	mShaderUniforms.add( mRepulsion.set("repulsion",0.1f, 0,1000.0));
 	mShaderUniforms.add( mFTLDistanceDamping.set("ftlDamping", 1.0,0.0,1.0));
 	mSimulationAlgorithms.setName( "shader algorithms");
 
@@ -603,6 +605,9 @@ void ofApp::createGui(){
 	mDrawFur.setName( "Draw Fur" );
 	mUseFilter.setName( "Use Filter" );
 	mPlayAnimation.setName( "Play Animation"); 
+	
+	
+	mGravity.set(  "Gravity", ofVec3f( 0,-10,0), ofVec3f( -100,-100,-100), ofVec3f( 100,100,100) ); 
 
 	gui.add( &mPBDAlgorithm);
 	gui.add( &mDFTLAlgorithm);
@@ -612,6 +617,7 @@ void ofApp::createGui(){
 	gui.add( mDrawFur );
 	gui.add( mPlayAnimation );
 	gui.add( mShaderUniforms);
+	gui.add( mGravity );
 }
 
 ofApp::AABB ofApp::calculateBoundingBox( ofMesh &mesh , float hairlength ){

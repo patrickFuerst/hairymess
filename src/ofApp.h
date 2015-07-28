@@ -90,6 +90,7 @@ class ofApp : public ofBaseApp{
 
 	
 		struct SimulationData{ 
+			ofVec4f gravityForce;
 			float velocityDamping;
 			int numIterationsPBD;
 			float stiffness;
@@ -102,7 +103,6 @@ class ofApp : public ofBaseApp{
 
 
 		struct ConstSimulationData{
-			ofVec4f gravityForce;
 			int numVerticesPerStrand; 
 			int numStrandsPerThreadGroup;
 			int numStrands; 
@@ -217,6 +217,7 @@ class ofApp : public ofBaseApp{
 		ofParameter<bool> mDrawVoxelGrid; 
 		ofParameter<bool> mDrawFur; 
 		ofParameter<bool> mPlayAnimation; 
+		ofParameter<ofVec3f> mGravity; 
 
 
 };

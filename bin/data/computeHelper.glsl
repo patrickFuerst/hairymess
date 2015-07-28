@@ -17,7 +17,6 @@ vec2 constrainMultiplier( bool fixed0 , bool fixed1){
 
 }
 
-
 vec4  applyLengthConstraintDFTL(  vec4 pos0 ,  bool fixed0,  vec4 pos1,  bool fixed1,  float targetLength, float stiffness = 1.0){
 
 	vec3 delta       = pos1.xyz - pos0.xyz; 
@@ -143,18 +142,26 @@ vec4 verletIntegration(  vec4 position , vec4 previousPosition, vec4 force,  boo
 	return position; 
 }
 
+vec3 mapPositionToGridIndex( const vec4 position, out vec3 delta ){
+	
+	vec4 scaledPosition = (position - g_minBB ) / (g_maxBB - g_minBB ) ;
+	scaledPosition *= g_gridSize; 
+	vec3 cellIndex = floor( scaledPosition.xyz ); 
+	delta = scaledPosition.xyz - cellIndex; 
+	return cellIndex;
+}
 
 int  voxelIndex( const float x, const float y, const float z ) {
 
 	return int(floor(x ) + floor(y ) * g_gridSize* g_gridSize  + floor(z ) *  g_gridSize);
 }
-
+ 
 int  voxelIndex( const vec4 position ) {
 
 	// position in Voxelgrid space 
-	vec4 scaledPosition = (position - vec4( g_modelTranslation.xyz, 0.0) ) / vec4((g_maxBB.xyz - g_minBB.xyz),1) + 0.5;
-	scaledPosition      *= g_gridSize; 
-	return voxelIndex( scaledPosition.x, scaledPosition.y, scaledPosition.z);
+	vec3 delta;
+	vec3 cellIndex = mapPositionToGridIndex( position, delta); 
+	return voxelIndex( cellIndex.x, cellIndex.y, cellIndex.z);
 }
 
 int  voxelIndex( const int x, const int y, const int z ) {
