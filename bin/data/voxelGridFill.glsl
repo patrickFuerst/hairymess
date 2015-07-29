@@ -17,11 +17,8 @@ layout(local_size_x = LOCAL_GROUP_SIZE_X, local_size_y = 1, local_size_z = 1) in
 void trilinearInsertDensity( const vec4 position ,  const float value){
 
 	// position in Voxelgrid space 
-	vec4 scaledPosition = (position - vec4( g_modelTranslation.xyz, 0.0) ) / vec4((g_maxBB.xyz - g_minBB.xyz),1) + 0.5;
-	scaledPosition *= g_gridSize; 
-	vec3 cellIndex = floor( scaledPosition.xyz  ); 
-
-	vec3 delta = scaledPosition.xyz - cellIndex; 
+	vec3 delta; 
+	vec3 cellIndex = mapPositionToGridIndex( position, delta); 
 
 	atomicAdd(g_densityBuffer[ voxelIndex(cellIndex.x, cellIndex.y, cellIndex.z ) ] ,  value  * (1.0 - delta.x) * (1.0 - delta.y ) * (1.0 - delta.z)); 
 	if(cellIndex.z + 1 < g_gridSize) atomicAdd(g_densityBuffer[ voxelIndex(cellIndex.x, cellIndex.y, cellIndex.z + 1 ) ] ,  value  * (1.0 - delta.x) * (1.0 - delta.y ) *  delta.z); 
@@ -46,11 +43,8 @@ void atomicAddVelocity( const uint index, const vec4 value ){
 void trilinearInsertVelocity( const vec4 position ,  const vec4 velocity){
 
 	// position in Voxelgrid space 
-	vec4 scaledPosition = (position - vec4( g_modelTranslation.xyz, 0.0) ) / vec4((g_maxBB.xyz - g_minBB.xyz),1) + 0.5;
-	scaledPosition *= g_gridSize; 
-	vec3 cellIndex = floor( scaledPosition.xyz  ); 
-
-	vec3 delta = scaledPosition.xyz - cellIndex; 
+	vec3 delta; 
+	vec3 cellIndex = mapPositionToGridIndex( position, delta); 
 
 	atomicAddVelocity( voxelIndex(cellIndex.x, cellIndex.y, cellIndex.z ) ,  velocity * (1.0 - delta.x) * (1.0 - delta.y ) * (1.0 - delta.z) ); 
 	
@@ -84,27 +78,22 @@ void trilinearInsertVelocity( const vec4 position ,  const vec4 velocity){
 
 }
 
-void insertVelocity( const vec4 position ,  const vec4 velocity){
+void insertVelocity( const vec4 position , const vec4 velocity){
 
 	// position in Voxelgrid space 
-	vec4 scaledPosition = (position - vec4( g_modelTranslation.xyz, 0.0) ) / vec4((g_maxBB.xyz - g_minBB.xyz),1) + 0.5;
-	scaledPosition      *= g_gridSize; 
-	vec3 cellIndex      = floor( scaledPosition.xyz  ); 
+	vec3 delta; 
+	vec3 cellIndex = mapPositionToGridIndex( position, delta); 
 	
-	vec3 delta          = scaledPosition.xyz - cellIndex; 
 	atomicAddVelocity( voxelIndex(cellIndex.x, cellIndex.y, cellIndex.z ) ,  velocity  ); 	
 	
 }
 
-void insertDensity( const vec4 position ,   const float value){
+void insertDensity( const vec4 position ,  const float value){
 
 	// position in Voxelgrid space 
-	vec4 scaledPosition = (position - vec4( g_modelTranslation.xyz, 0.0) ) / vec4((g_maxBB.xyz - g_minBB.xyz),1) + 0.5;
-	scaledPosition *= g_gridSize; 
-	vec3 cellIndex = floor( scaledPosition.xyz  ); 
-
-	vec3 delta = scaledPosition.xyz - cellIndex; 
-
+	vec3 delta; 
+	vec3 cellIndex = mapPositionToGridIndex( position, delta); 
+	
 	atomicAdd(g_densityBuffer[ voxelIndex(cellIndex.x, cellIndex.y, cellIndex.z ) ], value ) ; 
 	
 }
@@ -116,8 +105,8 @@ void main(){
 	const vec4 velocity =  ( g_particles[gl_GlobalInvocationID.x].pos - g_particles[gl_GlobalInvocationID.x].prevPos ) / g_timeStep;
 
 	// TODO optimise both to one method
-	trilinearInsertDensity( position, 1.0 ); // for every particle adds a density of one
-	trilinearInsertVelocity( position , velocity);
+	trilinearInsertDensity( position - g_modelTranslation, 1.0 ); // for every particle adds a density of one
+	trilinearInsertVelocity( position - g_modelTranslation, velocity);
 //	insertDensity( position , 1.0 );
 //	insertVelocity( position, velocity ); 
 

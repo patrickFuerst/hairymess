@@ -20,7 +20,7 @@ subroutine(hairSimulationAlgorithm) void PBDApproach( const uint localStrandInde
 		velocity = sharedPos[localVertexIndex] - prevPosition; 
 		velocity /= g_timeStep; 
 		
-		velocity = calculateFrictionAndRepulsionVelocityCorrection( velocity, sharedPos[localVertexIndex] );
+		velocity = calculateFrictionAndRepulsionVelocityCorrection( velocity, sharedPos[localVertexIndex] - g_modelTranslation);
 
 		sharedPos[localVertexIndex]  = positionIntegration( sharedPos[localVertexIndex], velocity, force );
 
