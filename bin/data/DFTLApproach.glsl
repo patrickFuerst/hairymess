@@ -58,4 +58,5 @@ subroutine(hairSimulationAlgorithm) void DFTLApproach( const uint localStrandInd
  	groupMemoryBarrier();
 
 	updateParticle(sharedPos[localVertexIndex], oldPosition,vec4(0),color );
+
 }

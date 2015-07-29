@@ -115,15 +115,15 @@ void checkCollision( const vec4 prevPos, inout vec4 pos, inout vec4 velocity ){
 
 	vec4 sphere = vec4(0,0,0,4) + g_modelTranslation;
 	vec3 collisionPoint, normal; 
-	if( calculateSphereCollision( prevPos, pos , sphere , collisionPoint, normal ) ){
+	// if( calculateSphereCollision( prevPos, pos , sphere , collisionPoint, normal ) ){
 
-		// bounce particle on surface of sphere 
+	// 	// bounce particle on surface of sphere 
 
-		vec3 u = dot(velocity.xyz , normal ) * normal; 
-		vec3 w = velocity.xyz - u; 
-		velocity.xyz = w - u; 
-		pos.xyz = collisionPoint;
-	}
+	// 	vec3 u = dot(velocity.xyz , normal ) * normal; 
+	// 	vec3 w = velocity.xyz - u; 
+	// 	velocity.xyz = w - u; 
+	// 	pos.xyz = collisionPoint;
+	// }
 
 	vec3 planePosition = vec3(0,0,0);
 	vec3 planeNormal = vec3(0,1,0);
@@ -148,26 +148,30 @@ void main(){
 	
 	uint localStrandIndex, localVertexIndex, globalStrandIndex, vertexIndexInStrand; 
 	calculateIndices( localVertexIndex, localStrandIndex, globalStrandIndex,vertexIndexInStrand, g_numVerticesPerStrand,g_numStrandsPerThreadGroup );
-	
-	sharedPos[localVertexIndex] = g_particles[gl_GlobalInvocationID.x].pos;
-	const vec4 prevPosition =   g_particles[gl_GlobalInvocationID.x].prevPos;
-	const vec4 color = g_particles[gl_GlobalInvocationID.x].color;
+	vec4 oldPosition, prevPosition,color ;
 
-	sharedFixed[localVertexIndex] = g_particles[gl_GlobalInvocationID.x].fix;
+	if(vertexIndexInStrand > 0 ){
+		  oldPosition = sharedPos[localVertexIndex] = g_particles[gl_GlobalInvocationID.x].pos;
+		  prevPosition =   g_particles[gl_GlobalInvocationID.x].prevPos;
+		  color = g_particles[gl_GlobalInvocationID.x].color;
+		  sharedFixed[localVertexIndex] = g_particles[gl_GlobalInvocationID.x].fix;
+
+	}else{
+		 oldPosition = sharedPos[localVertexIndex] = g_modelMatrix * vec4(vec3(g_rootParticles[globalStrandIndex].x,g_rootParticles[globalStrandIndex].y,g_rootParticles[globalStrandIndex].z),1.0); // workaround because looks like NVIDIA bug not packing vec3 right with std430
+		 prevPosition =  vec4(0);
+		 color = vec4(1);
+		 sharedFixed[localVertexIndex] = true;
+
+
+	}
 	sharedLength[localStrandIndex] = g_strandData[globalStrandIndex].strandLength; 
 
 	vec4 force = g_gravityForce;
-
-	if( sharedFixed[localVertexIndex] ){
-		// first project it back to worldspace so rotations get handled properly
-		sharedPos[localVertexIndex].xyz = (g_modelMatrixPrevInverted * vec4(sharedPos[localVertexIndex].xyz,1.0)).xyz ;
-		sharedPos[localVertexIndex].xyz = (g_modelMatrix * vec4(sharedPos[localVertexIndex].xyz,1.0)).xyz ;
-	}
-
+	
 	memoryBarrierShared();
 
 
-	simulationAlgorithm(localStrandIndex, localVertexIndex, globalStrandIndex, vertexIndexInStrand, sharedPos[localVertexIndex], prevPosition,  color, force);
+	simulationAlgorithm(localStrandIndex, localVertexIndex, globalStrandIndex, vertexIndexInStrand, oldPosition, prevPosition,  color, force);
 	
 }
 

@@ -29,7 +29,6 @@ void trilinearInsertDensity( const vec4 position ,  const float value){
 	if(cellIndex.x + 1 < g_gridSize && cellIndex.y + 1 < g_gridSize ) atomicAdd(g_densityBuffer[ voxelIndex(cellIndex.x + 1, cellIndex.y + 1, cellIndex.z ) ] ,  value  * delta.x * delta.y * (1.0 - delta.z)); 
 	if(cellIndex.x + 1 < g_gridSize && cellIndex.y + 1 < g_gridSize && cellIndex.z + 1 < g_gridSize ) atomicAdd(g_densityBuffer[ voxelIndex(cellIndex.x + 1, cellIndex.y + 1, cellIndex.z  + 1) ] ,  value  *  delta.x * delta.y * delta.z); 
 
-
 }
 
 void atomicAddVelocity( const uint index, const vec4 value ){
@@ -93,13 +92,12 @@ void insertDensity( const vec4 position ,  const float value){
 	// position in Voxelgrid space 
 	vec3 delta; 
 	vec3 cellIndex = mapPositionToGridIndex( position, delta); 
-	
+
 	atomicAdd(g_densityBuffer[ voxelIndex(cellIndex.x, cellIndex.y, cellIndex.z ) ], value ) ; 
 	
 }
 
 void main(){
-	
 
 	const vec4 position =  g_particles[gl_GlobalInvocationID.x].pos;
 	const vec4 velocity =  ( g_particles[gl_GlobalInvocationID.x].pos - g_particles[gl_GlobalInvocationID.x].prevPos ) / g_timeStep;
@@ -108,7 +106,7 @@ void main(){
 	trilinearInsertDensity( position - g_modelTranslation, 1.0 ); // for every particle adds a density of one
 	trilinearInsertVelocity( position - g_modelTranslation, velocity);
 //	insertDensity( position , 1.0 );
-//	insertVelocity( position, velocity ); 
+	//insertVelocity( position, velocity ); 
 
 }
 

@@ -1,1 +1,2 @@
+ofxAssimpModelLoader
 ofxGui
