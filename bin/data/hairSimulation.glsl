@@ -15,7 +15,6 @@ subroutine void hairSimulationAlgorithm( const uint localStrandIndex,
 	const uint vertexIndexInStrand, 
 	const vec4 position, 
 	const vec4 prevPosition,
-	const vec4 velocity,
 	const vec4 color,
 	const vec4 force
 	);
@@ -111,6 +110,40 @@ vec4 calculateFrictionAndRepulsionVelocityCorrection( vec4 velocity, vec4 positi
 
 }
 
+
+void checkCollision( const vec4 prevPos, inout vec4 pos, inout vec4 velocity ){
+
+
+	float distanceRay = length(pos - prevPos);
+	if( distanceRay < 1e-7 ) return; // solves some trouble
+
+	vec4 sphere = vec4(0,0,0,4) + g_modelTranslation;
+	vec3 collisionPoint, normal; 
+	if( calculateSphereCollision( prevPos, pos , sphere , collisionPoint, normal ) ){
+
+		// bounce particle on surface of sphere 
+
+		vec3 u = dot(velocity.xyz , normal ) * normal; 
+		vec3 w = velocity.xyz - u; 
+		velocity.xyz = w - u; 
+		pos.xyz = collisionPoint;
+	}
+
+	vec3 planePosition = vec3(0,0,0);
+	vec3 planeNormal = vec3(0,1,0);
+	
+	if( calculatePlaneCollision( prevPos, pos ,  planePosition, planeNormal, collisionPoint ) ){
+
+		// bounce particle on surface of sphere 
+
+		vec3 u = dot(velocity.xyz , planeNormal ) * planeNormal; 
+		vec3 w = velocity.xyz - u; 
+		velocity.xyz = w -  u; 
+		pos.xyz = collisionPoint;
+	}
+
+}
+
  //simulation subroutines 
 #pragma include "DFTLApproach.glsl" // load after helpers are defined
 #pragma include "PBDApproach.glsl" // load after helpers are defined
@@ -120,20 +153,25 @@ void main(){
 	uint localStrandIndex, localVertexIndex, globalStrandIndex, vertexIndexInStrand; 
 	calculateIndices( localVertexIndex, localStrandIndex, globalStrandIndex,vertexIndexInStrand, g_numVerticesPerStrand,g_numStrandsPerThreadGroup );
 	
-	const vec4 oldPosition = sharedPos[localVertexIndex] = g_particles[gl_GlobalInvocationID.x].pos;
+	sharedPos[localVertexIndex] = g_particles[gl_GlobalInvocationID.x].pos;
 	const vec4 prevPosition =   g_particles[gl_GlobalInvocationID.x].prevPos;
 	const vec4 color = g_particles[gl_GlobalInvocationID.x].color;
-	const vec4 velocity =   g_particles[gl_GlobalInvocationID.x].vel;
 
 	sharedFixed[localVertexIndex] = g_particles[gl_GlobalInvocationID.x].fix;
 	sharedLength[localStrandIndex] = g_strandData[globalStrandIndex].strandLength; 
 
 	vec4 force = g_gravityForce;
-	
+
+	if( sharedFixed[localVertexIndex] ){
+		// first project it back to worldspace so rotations get handled properly
+		sharedPos[localVertexIndex].xyz = (g_modelMatrixPrevInverted * vec4(sharedPos[localVertexIndex].xyz,1.0)).xyz ;
+		sharedPos[localVertexIndex].xyz = (g_modelMatrix * vec4(sharedPos[localVertexIndex].xyz,1.0)).xyz ;
+	}
+
 	memoryBarrierShared();
 
 
-	simulationAlgorithm(localStrandIndex, localVertexIndex, globalStrandIndex, vertexIndexInStrand, oldPosition, prevPosition, velocity, color, force);
+	simulationAlgorithm(localStrandIndex, localVertexIndex, globalStrandIndex, vertexIndexInStrand, sharedPos[localVertexIndex], prevPosition,  color, force);
 	
 }
 

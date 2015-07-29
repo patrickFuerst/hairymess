@@ -6,23 +6,32 @@ subroutine(hairSimulationAlgorithm) void PBDApproach( const uint localStrandInde
 	const uint vertexIndexInStrand, 
 	const vec4 position, 
 	const vec4 prevPosition,
-	const vec4 velocity,
 	const vec4 color,
 	const vec4 force
 	){
 
-	const vec4 oldPosition = position; 
-	//sharedPos[localVertexIndex]  = verletIntegration( sharedPos[localVertexIndex], prevPosition, force, sharedFixed[localVertexIndex]);
-	sharedPos[localVertexIndex]  = positionIntegration( oldPosition , velocity, force, sharedFixed[localVertexIndex] );
+	const vec4 oldPosition = position;
 	const float strandLength = sharedLength[localStrandIndex]; 
 
+	vec4 velocity = vec4(0);
+
+	if( !sharedFixed[localVertexIndex] ) {
+
+		velocity = sharedPos[localVertexIndex] - prevPosition; 
+		velocity /= g_timeStep; 
+		
+		velocity = calculateFrictionAndRepulsionVelocityCorrection( velocity, sharedPos[localVertexIndex] );
+
+		sharedPos[localVertexIndex]  = positionIntegration( sharedPos[localVertexIndex], velocity, force );
+
+	}
+
+	memoryBarrierShared();
+	
 	const uint index0 = localVertexIndex*2;
 	const uint index1 = localVertexIndex*2+1;
 	const uint index2 = localVertexIndex*2+2;
 
-	memoryBarrierShared();
-	barrier();
-	
 	float stiffness = 1.0 - pow( (1.0 - g_stiffness), 1.0/g_numIterations); // linear depended on the iterations now
 	
 	for(int i = 0 ; i < g_numIterations ; i++){
@@ -40,41 +49,11 @@ subroutine(hairSimulationAlgorithm) void PBDApproach( const uint localStrandInde
 
 	}
 
-	barrier(); // need for removing undefined behaviour with plane collision
+	barrier();
+	checkCollision(prevPosition, sharedPos[localVertexIndex], velocity ); // somehow PBD doens't like collision detection before constraint , barrier thing ? 
 
-
-	vec4 newVelocity = vec4((sharedPos[localVertexIndex].xyz - oldPosition.xyz) / g_timeStep ,0.0); 
-
-	vec4 sphere = vec4(0,0,0,4) + g_modelTranslation;
-	vec3 collisionPoint, normal; 
-	if( calculateSphereCollision( oldPosition, sharedPos[localVertexIndex] , sphere , collisionPoint, normal ) ){
-
-		// bounce particle on surface of sphere 
-
-		vec3 u = dot(newVelocity.xyz , normal ) * normal; 
-		vec3 w = velocity.xyz - u; 
-		newVelocity.xyz = w - u; 
-		sharedPos[localVertexIndex].xyz = collisionPoint;
-
-	}
-
-
-	vec3 planePosition = vec3(0,0,0);
-	vec3 planeNormal = vec3(0,1,0);
-	if( calculatePlaneCollision( oldPosition, sharedPos[localVertexIndex] ,  planePosition, planeNormal, collisionPoint ) ){
-
-		// bounce particle on surface of sphere 
-
-		vec3 u = dot(newVelocity.xyz , planeNormal ) * planeNormal; 
-		vec3 w = velocity.xyz - u; 
-		//newVelocity.xyz = (w - u); 
-		sharedPos[localVertexIndex].xyz = collisionPoint;
-	}
-
-
-	newVelocity = calculateFrictionAndRepulsionVelocityCorrection( newVelocity, sharedPos[localVertexIndex] );
 	
-	updateParticle(sharedPos[localVertexIndex], oldPosition, newVelocity, color );
+	updateParticle(sharedPos[localVertexIndex], oldPosition, vec4(0), color );
 
 }
 

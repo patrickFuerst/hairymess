@@ -113,7 +113,7 @@ void main(){
 	
 
 	const vec4 position =  g_particles[gl_GlobalInvocationID.x].pos;
-	const vec4 velocity =  g_particles[gl_GlobalInvocationID.x].vel;
+	const vec4 velocity =  ( g_particles[gl_GlobalInvocationID.x].pos - g_particles[gl_GlobalInvocationID.x].prevPos ) / g_timeStep;
 
 	// TODO optimise both to one method
 	trilinearInsertDensity( position, 1.0 ); // for every particle adds a density of one

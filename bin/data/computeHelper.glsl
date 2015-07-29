@@ -110,21 +110,10 @@ void calculateIndices( inout uint localVertexIndex , inout uint localStrandIndex
 
 }
 
-vec4 positionIntegration( vec4 position, vec4 velocity, vec4 force, bool fix){
+vec4 positionIntegration( vec4 position, vec4 velocity, vec4 force ){
 
-	if( !fix){
-
-		position.xyz +=   velocity.xyz * g_velocityDamping * g_timeStep  + force.xyz * g_timeStep * g_timeStep;
-
-	}else{
-
-		// first project it back to worldspace so rotations get handled properly
-		position.xyz = (g_modelMatrixPrevInverted * vec4(position.xyz,1.0)).xyz ;
-		position.xyz = (g_modelMatrix * vec4(position.xyz,1.0)).xyz ;
-
-	}
-	return position; 
-
+	position.xyz +=   velocity.xyz * g_velocityDamping * g_timeStep  + force.xyz * g_timeStep * g_timeStep;
+	return position;
 }
 
 

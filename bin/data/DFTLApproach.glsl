@@ -7,7 +7,6 @@ subroutine(hairSimulationAlgorithm) void DFTLApproach( const uint localStrandInd
 	const uint vertexIndexInStrand, 
 	const vec4 position, 
 	const vec4 prevPosition,
-	const vec4 velocity,
 	const vec4 color,
 	const vec4 force
 	){
@@ -16,18 +15,32 @@ subroutine(hairSimulationAlgorithm) void DFTLApproach( const uint localStrandInd
 	const vec4 oldPosition = position;
 	const float strandLength = sharedLength[localStrandIndex]; 
 
-	// calculate the velocity according to the ftl approach 
-	// first approach was to calculate it at the end and add it to the newVelocity. But this results to that this "guiding" velocity appears in the voxel grid and distorts the all other calculations
-	vec4 distanceToNext = vec4(0,0,0,0);
-	if(vertexIndexInStrand < g_numVerticesPerStrand-1){
-		distanceToNext.xyz = sharedPos[localVertexIndex].xyz - sharedPos[localVertexIndex+1].xyz ;
+	vec4 velocity = vec4(0);
+
+	if( !sharedFixed[localVertexIndex] ) {
+
+		velocity = sharedPos[localVertexIndex] - prevPosition; 
+		velocity /= g_timeStep; 
+		
+		checkCollision(prevPosition, sharedPos[localVertexIndex], velocity );
+		memoryBarrierShared();
+
+
+		// calculate the corrected velocity according to the ftl approach 
+		vec4 distanceToNext = vec4(0,0,0,0);
+		if(vertexIndexInStrand < g_numVerticesPerStrand-1){
+			distanceToNext.xyz = sharedPos[localVertexIndex].xyz - sharedPos[localVertexIndex+1].xyz ;
+		}
+		velocity = velocity - g_ftlDamping *distanceToNext / g_timeStep; 
+
+		velocity = calculateFrictionAndRepulsionVelocityCorrection( velocity, sharedPos[localVertexIndex] );
+
+
+		sharedPos[localVertexIndex]  = positionIntegration( sharedPos[localVertexIndex], velocity, force );
+
 	}
-	vec4 derivedVelocity = velocity - g_ftlDamping *distanceToNext / g_timeStep; 
 
-
-	// explicit euler integration 
-	sharedPos[localVertexIndex]  = positionIntegration( sharedPos[localVertexIndex], derivedVelocity, force, sharedFixed[localVertexIndex]);
-
+	
 	memoryBarrierShared();
  	groupMemoryBarrier();
 
@@ -44,38 +57,5 @@ subroutine(hairSimulationAlgorithm) void DFTLApproach( const uint localStrandInd
 
  	groupMemoryBarrier();
 
-	vec4 newVelocity = vec4((sharedPos[localVertexIndex].xyz - oldPosition.xyz) / g_timeStep ,0.0); 
-	
-
-	vec4 sphere = vec4(0,0,0,4) + g_modelTranslation;
-	vec3 collisionPoint, normal; 
-	if( calculateSphereCollision( oldPosition, sharedPos[localVertexIndex] , sphere , collisionPoint, normal ) ){
-
-		// bounce particle on surface of sphere 
-
-		vec3 u = dot(newVelocity.xyz , normal ) * normal; 
-		vec3 w = velocity.xyz - u; 
-		newVelocity.xyz = w - u; 
-		sharedPos[localVertexIndex].xyz = collisionPoint;
-
-	}
-
-	vec3 planePosition = vec3(0,0,0);
-	vec3 planeNormal = vec3(0,1,0);
-	
-	if( calculatePlaneCollision( oldPosition, sharedPos[localVertexIndex] ,  planePosition, planeNormal, collisionPoint ) ){
-
-		// bounce particle on surface of sphere 
-
-		vec3 u = dot(newVelocity.xyz , planeNormal ) * planeNormal; 
-		vec3 w = velocity.xyz - u; 
-		newVelocity.xyz = w -  u; 
-		sharedPos[localVertexIndex].xyz = collisionPoint;
-
-	}
-
-
-	newVelocity = calculateFrictionAndRepulsionVelocityCorrection( newVelocity, sharedPos[localVertexIndex] );
-
-	updateParticle(sharedPos[gl_LocalInvocationID.x], oldPosition,newVelocity,color );
+	updateParticle(sharedPos[localVertexIndex], oldPosition,vec4(0),color );
 }

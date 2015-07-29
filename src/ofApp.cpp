@@ -3,7 +3,7 @@
 
 #define NUM_HAIR_PARTICLES 16   // number must not be bigger then WORK_GROUP_SIZE , current 32 max, because glsl for loop limited
 #define MIN_HAIR_LENGTH 1.0f
-#define MAX_HAIR_LENGTH 8.0f
+#define MAX_HAIR_LENGTH 2.0f
 
 #define WORK_GROUP_SIZE 64
 
@@ -142,11 +142,13 @@ void ofApp::fillVoxelGrid(float timeStep){
 
 	glBindBufferBase( GL_UNIFORM_BUFFER , UniformBuffers::ModelData, mUbos[UniformBuffers::ModelData] );
 	glBindBufferBase( GL_UNIFORM_BUFFER , UniformBuffers::ConstVoxelGridData, mUbos[UniformBuffers::ConstVoxelGridData] );
+	glBindBufferBase( GL_UNIFORM_BUFFER , UniformBuffers::SimulationData, mUbos[UniformBuffers::SimulationData] );
 
 	mVoxelComputeShaderFill.dispatchCompute(mNumWorkGroups , 1 , 1);
 
 	glBindBufferBase( GL_UNIFORM_BUFFER , UniformBuffers::ModelData, 0 );
 	glBindBufferBase( GL_UNIFORM_BUFFER , UniformBuffers::ConstVoxelGridData, 0 );
+	glBindBufferBase( GL_UNIFORM_BUFFER , UniformBuffers::SimulationData, 0 );
 
 	mVoxelComputeShaderFill.end();
 	glMemoryBarrier( GL_SHADER_STORAGE_BARRIER_BIT ); // wait till we finished writing the voxelgrid
@@ -235,7 +237,7 @@ void ofApp::setup(){
 	camera.lookAt(ofVec3f(0,0,0));
 
 	mFloor = ofMesh::plane(30,30 );
-	mFurryMesh = ofMesh::sphere(4,100);
+	mFurryMesh = ofMesh::sphere(4,200);
 	mNumHairStands = mFurryMesh.getNumVertices();
 	mNumParticles = mNumHairStands * NUM_HAIR_PARTICLES;
 	
