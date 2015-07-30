@@ -241,7 +241,7 @@ void ofApp::setup(){
 	mFloor = ofMesh::plane(30,30 );
 	//mFurryMesh = ofMesh::sphere(4,200);
 	
-	mAnimatedModel.loadModel("models/MutantWalking.dae", true);
+	mAnimatedModel.loadModel("models/beast_walking_inplace_17k.dae", true);
 	mAnimatedModel.disableColors();
 	mAnimatedModel.disableTextures();
 	mAnimatedModel.disableNormals();
@@ -249,7 +249,7 @@ void ofApp::setup(){
 
 	mAnimatedModel.setPosition(0,0,0);
 //	mAnimatedModel.setScaleNormalization(0.001);
-	mAnimatedModel.setScale(0.01,-0.01,0.01);
+//	mAnimatedModel.setScale(0.01,-0.01,0.01);
 	mAnimatedModel.setLoopStateForAllAnimations(OF_LOOP_NORMAL);
 	mAnimatedModel.playAllAnimations();
 	mAnimatedModel.update();
