@@ -281,11 +281,11 @@ void ofApp::setup(){
 
 		ofFloatColor startColor, endColor;
 		if( i % 2 == 0){
-			startColor = ofFloatColor::greenYellow;
-			endColor = ofFloatColor::deepSkyBlue;
+			startColor = ofFloatColor::rosyBrown;
+			endColor = ofFloatColor::rosyBrown;
 		}else{
-			startColor = ofFloatColor::red;
-			endColor = ofFloatColor::black;
+			startColor = ofFloatColor::sandyBrown;
+			endColor = ofFloatColor::sandyBrown;
 		}
 
 		ofVec3f v =   mAnimatedModel.getMeshHelper(0).matrix * mAnimatedModel.getModelMatrix()  * mFurryMesh.getVertex(i);
@@ -434,7 +434,7 @@ void ofApp::draw(){
 	camera.begin();
 
 	ofEnableDepthTest();
-	ofClear( ofColor::white);
+	ofClear( ofColor::black);
 	ofDrawAxis(10);
 	//ofDrawGrid(1.25, 10 , false,false,true,false);
 	ofSetColor(ofColor::white);
@@ -465,7 +465,7 @@ void ofApp::draw(){
 		drawAnimatedMesh();
 
 
-		//drawFloor();
+		drawFloor();
 
 		popGlDebugGroup();
 	}/*else{
@@ -568,8 +568,9 @@ void ofApp::drawFloor(){
 	red.a *= 0.8;
 	ofSetColor(red);
 	ofPushMatrix();
-	ofMultViewMatrix(mModelAnimation);
-	mFurryMesh.draw();
+	//ofMultViewMatrix(mModelAnimation);
+	//mFurryMesh.draw();
+	drawAnimatedMesh();
 	ofPopMatrix();
 
 	ofPopMatrix();

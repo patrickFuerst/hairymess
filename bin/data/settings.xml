@@ -7,8 +7,11 @@
 		<numIterations>30</numIterations>
 		<stiffness>1</stiffness>
 		<friction>0.0663265</friction>
-		<repulsion>2.09184</repulsion>
+		<repulsion>117.347</repulsion>
 		<ftlDamping>1</ftlDamping>
 	</shader_params>
 <group/>
+<Use_Filter>205</Use_Filter>
+	<Play_Animation>205</Play_Animation>
+	<Gravity>0, -10, 0</Gravity>
 </group>
