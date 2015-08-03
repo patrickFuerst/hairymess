@@ -583,11 +583,15 @@ void ofApp::algorithmChanged(const void* sender ) {
 	string name = button->getName();
 	GLint subroutine = 0;
 
-	if( name == "PBD Algorithm" )
-		subroutine = mComputeShaderSimulation.getSubroutineLocation( GL_COMPUTE_SHADER , "PBDApproach");
-	else if( name == "DFTL Algorithm" )
-		subroutine = mComputeShaderSimulation.getSubroutineLocation( GL_COMPUTE_SHADER , "DFTLApproach");
+	if( name == "PBD Algorithm" ){
+		//subroutine = mComputeShaderSimulation.getSubroutineLocation( GL_COMPUTE_SHADER , "PBDApproach"); // not in the oF branch yet
+		subroutine = 2; // defined in the shader file
+	}
+	else if( name == "DFTL Algorithm" ){
+		//subroutine = mComputeShaderSimulation.getSubroutineLocation( GL_COMPUTE_SHADER , "DFTLApproach");
+		subroutine = 1; // defined in the shader file
 
+	}
 	mSubroutineUniforms[0] = subroutine;
 }
 

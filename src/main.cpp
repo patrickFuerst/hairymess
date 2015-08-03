@@ -8,6 +8,7 @@ int main( ){
 	ofGLFWWindowSettings settings;
 	settings.setGLVersion(4,4);
 	
+	settings.numSamples = 8;
 	settings.stencilBits = 8; 
 	settings.width = 1920;
 	settings.height = 1080;

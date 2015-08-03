@@ -1,7 +1,7 @@
 
 // Dynamic Follow the Leader Approach
 	
-subroutine(hairSimulationAlgorithm) void DFTLApproach( const uint localStrandIndex,
+layout(index= 1) subroutine(hairSimulationAlgorithm) void DFTLApproach( const uint localStrandIndex,
 	const uint localVertexIndex,
 	const uint globalStrandIndex,
 	const uint vertexIndexInStrand, 

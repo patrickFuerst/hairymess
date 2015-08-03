@@ -1,6 +1,6 @@
 
 //Position Based Dynamics Approach
-subroutine(hairSimulationAlgorithm) void PBDApproach( const uint localStrandIndex,
+layout(index= 2) subroutine(hairSimulationAlgorithm) void PBDApproach( const uint localStrandIndex,
 	const uint localVertexIndex,
 	const uint globalStrandIndex,
 	const uint vertexIndexInStrand, 
