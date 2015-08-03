@@ -163,7 +163,7 @@ class ofApp : public ofBaseApp{
 		GLuint mUbos[UniformBuffers::Size]; 
 		GLuint mSubroutineUniforms[1];
 		GLuint mRootBufferId; 
-		ofShader mHairshader, mVoxelComputeShaderFill, mVoxelComputeShaderPostProcess, mVoxelComputeShaderFilter; 
+		ofShader mHairshader,mFloorShader,  mVoxelComputeShaderFill, mVoxelComputeShaderPostProcess, mVoxelComputeShaderFilter; 
 		int mVoxelGridSize; 
 
 		ofShader mComputeShaderSimulation;

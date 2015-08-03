@@ -18,14 +18,21 @@ in block
 
 
 uniform vec4 overrideColor; 
+uniform float windowHeight; 
 
 layout(location = FRAG_COLOR, index = 0) out vec4 Color;
 
 
 void main()
 {
+
+	float y = gl_FragCoord.y; 
+	// fade out color 
+	float delta = (y) /(windowHeight - (windowHeight/2.0) );
+	float alpha =  0.01 + pow(delta,4);
 	Color = overrideColor * In.color;
+	Color.a = clamp(alpha,0,1);
 	float p = 1.0/2.2;
-	Color.rgb =  pow(Color.rgb, vec3(p));  
+	Color.rgb =  pow(Color.rgb, vec3(p)); 
 }
 

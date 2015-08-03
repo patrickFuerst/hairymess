@@ -7,8 +7,6 @@
 #pragma include "computeHelper.glsl"  // load after buffers are defined 
 
 
-shared vec4 sharedPos[LOCAL_GROUP_SIZE_X];
-
 layout(local_size_x = LOCAL_GROUP_SIZE_X, local_size_y = 1, local_size_z = 1) in;
 
 

@@ -3,7 +3,7 @@
 
 #define NUM_HAIR_PARTICLES 8   // number must not be bigger then WORK_GROUP_SIZE , current 32 max, because glsl for loop limited
 #define MIN_HAIR_LENGTH 1.0f
-#define MAX_HAIR_LENGTH 2.0f
+#define MAX_HAIR_LENGTH 1.2f
 
 
 #define WORK_GROUP_SIZE 64
@@ -33,6 +33,11 @@ void ofApp::reloadShaders(){
 	mHairshader.setupShaderFromFile( GL_VERTEX_SHADER, "basic_VS.glsl");
 	mHairshader.setupShaderFromFile( GL_FRAGMENT_SHADER, "basic_FS.glsl");
 	mHairshader.linkProgram();
+
+	mFloorShader.setupShaderFromFile( GL_VERTEX_SHADER, "basic_VS.glsl");
+	mFloorShader.setupShaderFromFile( GL_FRAGMENT_SHADER, "floor_fs.glsl");
+	mFloorShader.linkProgram();
+	
 
 	mVoxelComputeShaderFill.setupShaderFromFile(GL_COMPUTE_SHADER, "voxelGridFill.glsl" );
 	mVoxelComputeShaderFill.linkProgram();
@@ -279,13 +284,13 @@ void ofApp::setup(){
 	{
 		float hairLength = MIN_HAIR_LENGTH  + ofRandom(1.0) * (MAX_HAIR_LENGTH - MIN_HAIR_LENGTH); 
 
-		ofFloatColor startColor, endColor;
+		ofColor startColor, endColor;
 		if( i % 2 == 0){
-			startColor = ofFloatColor::rosyBrown;
-			endColor = ofFloatColor::rosyBrown;
+			startColor.set(255,190,42);
+			endColor = startColor;
 		}else{
-			startColor = ofFloatColor::sandyBrown;
-			endColor = ofFloatColor::sandyBrown;
+			startColor.set(0,163,136);
+			endColor = startColor;
 		}
 
 		ofVec3f v =   mAnimatedModel.getMeshHelper(0).matrix * mAnimatedModel.getModelMatrix()  * mFurryMesh.getVertex(i);
@@ -431,18 +436,24 @@ void ofApp::drawAnimatedMesh(){
 
 //--------------------------------------------------------------
 void ofApp::draw(){
-	camera.begin();
 
 	ofEnableDepthTest();
 	ofClear( ofColor::black);
-	ofDrawAxis(10);
+	
+	ofBackgroundGradient(ofColor::lightGray, ofColor::white, OF_GRADIENT_CIRCULAR);
 	//ofDrawGrid(1.25, 10 , false,false,true,false);
 	ofSetColor(ofColor::white);
+	ofDrawAxis(10);
+
+	camera.begin();
 
 	if( mDrawFur ){
 		pushGlDebugGroup( "Draw Hair" );
 		glPointSize(1);
 		
+
+		drawAnimatedMesh();
+
 		ofPushMatrix();
 		
 		mHairshader.begin();
@@ -462,7 +473,6 @@ void ofApp::draw(){
 		//mFurryMesh.draw();
 		//ofPopMatrix();
 
-		drawAnimatedMesh();
 
 
 		drawFloor();
@@ -533,9 +543,10 @@ void ofApp::drawFloor(){
 	glDepthMask(GL_FALSE);
 	glClear(GL_STENCIL_BUFFER_BIT );
 
-	ofSetColor(ofColor::ghostWhite);
+	ofSetColor(ofColor(1,1,1,0));
 	ofPushMatrix();
 	ofRotateX(90);
+	ofRotateY(45);
 	mFloor.draw();
 	ofPopMatrix();
 
@@ -546,33 +557,32 @@ void ofApp::drawFloor(){
 	glDepthMask(GL_TRUE);
 
 	ofPushMatrix();
-
+	ofFloatColor gray = ofFloatColor::whiteSmoke;
+	//gray.a = 0.8;
+	
 	ofMultMatrix( ofMatrix4x4::newScaleMatrix(1,-1,1) ) ;
-	mHairshader.begin();
-	mHairshader.setUniform4f( "overrideColor", ofVec4f(0.6,0.6,0.6,0.8) );
-	glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT); //?
+	
+	//ofSetColor(gray);
+	//ofPushMatrix();
+	////ofMultViewMatrix(mModelAnimation);
+	////mFurryMesh.draw();
+	//drawAnimatedMesh();
+	//ofPopMatrix();
+	//
+	mFloorShader.begin();
+	mFloorShader.setUniform4f( "overrideColor", gray.r, gray.g, gray.b, gray.a );
+	mFloorShader.setUniform1f( "windowHeight", ofGetWindowHeight() );
+	//glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT); //?
 	//mHairVbo.draw(GL_POINTS,0,mParticles.size());
+	
 	glEnable(GL_PRIMITIVE_RESTART);
 	mHairVbo.drawElements( GL_LINE_STRIP , mHairVbo.getNumIndices() );
 	glDisable(GL_PRIMITIVE_RESTART);
-	mHairshader.setUniform4f( "overrideColor", ofVec4f(1,1,1,1.0) );
 
-	mHairshader.end();
+	mFloorShader.end();
 
 	ofMatrix4x4 mirrorMatrix = mModelAnimation;
-
-	ofColor red = ofColor::red;
-	red.r *= 0.6;
-	red.g *= 0.6;
-	red.b *= 0.6;
-	red.a *= 0.8;
-	ofSetColor(red);
-	ofPushMatrix();
-	//ofMultViewMatrix(mModelAnimation);
-	//mFurryMesh.draw();
-	drawAnimatedMesh();
-	ofPopMatrix();
-
+	
 	ofPopMatrix();
 	
 	glDisable(GL_STENCIL_TEST );
